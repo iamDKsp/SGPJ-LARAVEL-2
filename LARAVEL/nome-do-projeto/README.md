@@ -22,3 +22,23 @@ Thank you for considering contributing to the Laravel framework! The contributio
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+---
+
+## Como executar a interface SGPJ dentro do Laravel
+
+A aplicação front-end original da pasta `V7` foi portada integralmente para esta instalação Laravel. Para executar a mesma interface com toda a funcionalidade preservada:
+
+1. Instale as dependências do projeto Laravel (exige PHP 8.2+ e Composer):
+   ```bash
+   composer install
+   cp .env.example .env
+   php artisan key:generate
+   ```
+2. Inicie o servidor de desenvolvimento do Laravel:
+   ```bash
+   php artisan serve
+   ```
+3. Acesse `http://localhost:8000` no navegador. O painel SGPJ aparecerá exatamente como na versão estática, incluindo login, filtros, quadro e visualização em lista.
+
+Os arquivos estáticos (`styles.css`, `script.js`, `processos.json` e `processos-data.js`) estão na pasta `public/`, garantindo que a interface mantenha todos os comportamentos originais.
