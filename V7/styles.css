@@ -186,6 +186,51 @@ body.theme-dark .card-actions button:hover {
   color: var(--color-text);
 }
 
+body.theme-dark .deal-card--dragging {
+  box-shadow: 0 28px 52px rgba(2, 6, 23, 0.7);
+}
+
+body.theme-dark .column-cards--over {
+  outline-color: rgba(56, 189, 248, 0.55);
+  background: rgba(56, 189, 248, 0.12);
+}
+
+body.theme-dark .card-menu {
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(51, 65, 85, 0.85);
+  box-shadow: 0 26px 52px rgba(2, 6, 23, 0.72);
+}
+
+body.theme-dark .card-menu__button:hover,
+body.theme-dark .card-menu__button:focus-visible {
+  background: rgba(56, 189, 248, 0.18);
+  color: var(--color-primary);
+}
+
+body.theme-dark .card-menu__select {
+  background: rgba(17, 24, 39, 0.92);
+  border: 1px solid rgba(71, 85, 105, 0.7);
+  color: var(--color-text);
+}
+
+body.theme-dark .card-menu__confirm {
+  box-shadow: 0 20px 36px rgba(14, 165, 233, 0.38);
+}
+
+body.theme-dark .table-sort-toggle {
+  color: var(--color-text-muted);
+}
+
+body.theme-dark .table-sort-toggle[data-active='true'] {
+  color: var(--color-primary);
+}
+
+body.theme-dark .table-sort-toggle:hover,
+body.theme-dark .table-sort-toggle:focus-visible {
+  background: rgba(56, 189, 248, 0.22);
+  color: var(--color-primary);
+}
+
 body.theme-dark .empty-column {
   background: rgba(17, 24, 39, 0.65);
   border: 1px dashed rgba(100, 116, 139, 0.45);
@@ -1276,11 +1321,25 @@ input[type='search']:focus {
   gap: 0.75rem;
   box-shadow: 0 14px 25px rgba(15, 23, 42, 0.08);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  cursor: grab;
 }
 
 .deal-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 18px 30px rgba(15, 23, 42, 0.12);
+}
+
+.deal-card:active {
+  cursor: grabbing;
+}
+
+.deal-card--dragging {
+  opacity: 0.85;
+  transform: scale(1.02);
+  box-shadow: 0 22px 40px rgba(15, 23, 42, 0.18);
+  cursor: grabbing;
+  z-index: 35;
 }
 
 .deal-card__header {
@@ -1361,6 +1420,150 @@ input[type='search']:focus {
 .card-actions button:hover {
   background-color: rgba(15, 23, 42, 0.06);
   color: var(--color-text);
+}
+
+.column-cards--over {
+  outline: 2px dashed rgba(59, 130, 246, 0.4);
+  outline-offset: 6px;
+  background: rgba(59, 130, 246, 0.08);
+  border-radius: var(--radius-md);
+}
+
+.card-menu {
+  position: absolute;
+  right: 0.75rem;
+  top: calc(100% - 0.25rem);
+  width: min(220px, 80vw);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 20px 44px rgba(15, 23, 42, 0.16);
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.6rem;
+  z-index: 30;
+  animation: cardMenuFade 0.18s ease-out;
+}
+
+.card-menu__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.card-menu__button {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  padding: 0.45rem 0.55rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.card-menu__button:hover,
+.card-menu__button:focus-visible {
+  background: rgba(15, 23, 42, 0.08);
+  color: var(--color-text);
+}
+
+.card-menu__button--danger {
+  color: var(--color-danger);
+}
+
+.card-menu__submenu {
+  display: grid;
+  gap: 0.5rem;
+  padding-top: 0.35rem;
+}
+
+.card-menu__select {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.55rem;
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  font-size: 0.85rem;
+}
+
+.card-menu__confirm {
+  justify-self: flex-end;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: #fff;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 14px 28px rgba(59, 130, 246, 0.22);
+}
+
+.card-menu__confirm:hover {
+  background: var(--color-primary-strong);
+}
+
+.table-sortable {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.table-sort-toggle {
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  padding: 0;
+}
+
+.table-sort-toggle::after {
+  content: '▾';
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.table-sort-toggle[data-direction='asc']::after {
+  transform: rotate(180deg);
+}
+
+.table-sort-toggle[data-active='true'] {
+  color: var(--color-primary-strong);
+}
+
+.table-sort-toggle:hover,
+.table-sort-toggle:focus-visible {
+  background: rgba(15, 23, 42, 0.08);
+  color: var(--color-text);
+}
+
+@keyframes cardMenuFade {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .empty-column {

@@ -75,6 +75,10 @@
   let exportPopoverOpen = false;
   let viewState = { board: true, list: false };
   let temaAtual = 'light';
+  let valorSortToggleButton = null;
+  let cardMenuAberto = null;
+  let processoEmArraste = null;
+  let columnDropZones = new Map();
 
   document.addEventListener('DOMContentLoaded', prepararInterface);
 
@@ -327,6 +331,7 @@
         return [column.getAttribute('data-column'), column];
       })
     );
+    configurarAreasDeSoltar();
 
     statusFilter = document.getElementById('status-filter');
     sortFilter = document.getElementById('sort-filter');
@@ -681,20 +686,31 @@
     });
 
     document.addEventListener('click', function (event) {
-      if (!exportPopover || exportPopover.hidden) {
-        return;
+      if (exportPopover && !exportPopover.hidden) {
+        const clicouDentroPopover = exportPopover.contains(event.target);
+        const clicouNoBotao = exportSettingsButton && exportSettingsButton.contains(event.target);
+        if (!clicouDentroPopover && !clicouNoBotao) {
+          fecharPopoverExportacao();
+        }
       }
 
-      const clicouDentroPopover = exportPopover.contains(event.target);
-      const clicouNoBotao = exportSettingsButton && exportSettingsButton.contains(event.target);
-      if (!clicouDentroPopover && !clicouNoBotao) {
-        fecharPopoverExportacao();
+      if (cardMenuAberto && cardMenuAberto.container) {
+        const clicouNoMenu = cardMenuAberto.container.contains(event.target);
+        const clicouNoBotaoMenu = cardMenuAberto.trigger && cardMenuAberto.trigger.contains(event.target);
+        if (!clicouNoMenu && !clicouNoBotaoMenu) {
+          fecharMenuCard();
+        }
       }
     });
 
     document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && exportPopover && !exportPopover.hidden) {
-        fecharPopoverExportacao();
+      if (event.key === 'Escape') {
+        if (exportPopover && !exportPopover.hidden) {
+          fecharPopoverExportacao();
+        }
+        if (cardMenuAberto) {
+          fecharMenuCard();
+        }
       }
     });
 
@@ -708,6 +724,8 @@
   }
 
   function renderizarQuadro() {
+    fecharMenuCard();
+    limparDestaquesDeSoltar();
     const comparator = obterComparador(filtrosAtivos.sort);
     const processosFiltrados = obterProcessosFiltrados();
 
@@ -839,6 +857,27 @@
     const card = document.createElement('article');
     card.className = 'deal-card';
     card.setAttribute('role', 'listitem');
+    if (processo && processo.id) {
+      card.dataset.processoId = processo.id;
+    }
+    card.draggable = true;
+    card.addEventListener('dragstart', function (event) {
+      processoEmArraste = processo;
+      fecharMenuCard();
+      card.classList.add('deal-card--dragging');
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData(
+          'text/plain',
+          processo.id || processo.numero_processo || processo.nome_reu || ''
+        );
+      }
+    });
+    card.addEventListener('dragend', function () {
+      card.classList.remove('deal-card--dragging');
+      processoEmArraste = null;
+      limparDestaquesDeSoltar();
+    });
 
     const cabecalho = document.createElement('header');
     cabecalho.className = 'deal-card__header';
@@ -903,13 +942,244 @@
     const menu = document.createElement('button');
     menu.type = 'button';
     menu.setAttribute('aria-label', 'Mais opções para ' + (processo.nome_reu || 'o cliente'));
+    menu.setAttribute('aria-haspopup', 'true');
+    menu.setAttribute('aria-expanded', 'false');
+    menu.dataset.cardMenuTrigger = 'true';
+    menu.className = 'card-menu__trigger';
     menu.textContent = '⋯';
+    menu.addEventListener('click', function (event) {
+      event.stopPropagation();
+      alternarMenuCard(processo, menu, card);
+    });
+    menu.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        alternarMenuCard(processo, menu, card);
+      }
+    });
 
     actions.append(visualizar, lembrar, menu);
     rodape.append(etapaPill, actions);
 
     card.append(cabecalho, titulo, meta, rodape);
     return card;
+  }
+
+  function alternarMenuCard(processo, trigger, card) {
+    if (cardMenuAberto && cardMenuAberto.trigger === trigger) {
+      fecharMenuCard();
+      return;
+    }
+
+    abrirMenuCard(processo, trigger, card);
+  }
+
+  function abrirMenuCard(processo, trigger, card) {
+    if (!card) {
+      return;
+    }
+
+    fecharMenuCard();
+
+    const menu = document.createElement('div');
+    menu.className = 'card-menu';
+    menu.setAttribute('role', 'menu');
+    menu.addEventListener('click', function (event) {
+      event.stopPropagation();
+    });
+
+    const lista = document.createElement('ul');
+    lista.className = 'card-menu__list';
+    lista.setAttribute('role', 'none');
+
+    const editarItem = document.createElement('li');
+    editarItem.setAttribute('role', 'none');
+    const editarBotao = document.createElement('button');
+    editarBotao.type = 'button';
+    editarBotao.className = 'card-menu__button';
+    editarBotao.textContent = 'Editar';
+    editarBotao.setAttribute('role', 'menuitem');
+    editarBotao.addEventListener('click', function () {
+      fecharMenuCard();
+    });
+    editarItem.appendChild(editarBotao);
+
+    const moverItem = document.createElement('li');
+    moverItem.setAttribute('role', 'none');
+    const moverBotao = document.createElement('button');
+    moverBotao.type = 'button';
+    moverBotao.className = 'card-menu__button';
+    moverBotao.textContent = 'Mover';
+    moverBotao.setAttribute('role', 'menuitem');
+    moverBotao.setAttribute('aria-haspopup', 'true');
+    moverBotao.setAttribute('aria-expanded', 'false');
+
+    const moverSubmenu = document.createElement('div');
+    moverSubmenu.className = 'card-menu__submenu';
+    moverSubmenu.hidden = true;
+
+    const moverSelect = document.createElement('select');
+    moverSelect.className = 'card-menu__select';
+    columns.forEach(function (coluna) {
+      const option = document.createElement('option');
+      option.value = coluna.id;
+      option.textContent = coluna.label;
+      moverSelect.appendChild(option);
+    });
+    moverSelect.value = processo.etapa || columns[0].id;
+
+    const moverConfirmar = document.createElement('button');
+    moverConfirmar.type = 'button';
+    moverConfirmar.className = 'card-menu__confirm';
+    moverConfirmar.textContent = 'Mover';
+    moverConfirmar.addEventListener('click', function () {
+      moverProcessoParaEtapa(processo, moverSelect.value);
+      fecharMenuCard();
+    });
+
+    moverSubmenu.append(moverSelect, moverConfirmar);
+
+    moverBotao.addEventListener('click', function (event) {
+      event.stopPropagation();
+      const estavaFechado = moverSubmenu.hidden;
+      moverSubmenu.hidden = !estavaFechado;
+      moverBotao.setAttribute('aria-expanded', estavaFechado ? 'true' : 'false');
+      if (estavaFechado) {
+        moverSelect.focus();
+      }
+    });
+
+    moverItem.append(moverBotao, moverSubmenu);
+
+    const excluirItem = document.createElement('li');
+    excluirItem.setAttribute('role', 'none');
+    const excluirBotao = document.createElement('button');
+    excluirBotao.type = 'button';
+    excluirBotao.className = 'card-menu__button card-menu__button--danger';
+    excluirBotao.textContent = 'Excluir';
+    excluirBotao.setAttribute('role', 'menuitem');
+    excluirBotao.addEventListener('click', function () {
+      const confirmou = window.confirm(
+        'Esta ação é permanente. Deseja realmente excluir este processo?'
+      );
+      if (confirmou) {
+        excluirProcesso(processo);
+        fecharMenuCard();
+      }
+    });
+    excluirItem.appendChild(excluirBotao);
+
+    lista.append(editarItem, moverItem, excluirItem);
+    menu.appendChild(lista);
+
+    card.appendChild(menu);
+    if (trigger) {
+      trigger.setAttribute('aria-expanded', 'true');
+    }
+
+    cardMenuAberto = {
+      container: menu,
+      trigger: trigger,
+      moverSubmenu: moverSubmenu,
+      moverBotao: moverBotao
+    };
+  }
+
+  function fecharMenuCard() {
+    if (!cardMenuAberto) {
+      return;
+    }
+
+    if (cardMenuAberto.trigger) {
+      cardMenuAberto.trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    if (cardMenuAberto.moverSubmenu) {
+      cardMenuAberto.moverSubmenu.hidden = true;
+    }
+
+    if (cardMenuAberto.container && cardMenuAberto.container.parentNode) {
+      cardMenuAberto.container.parentNode.removeChild(cardMenuAberto.container);
+    }
+
+    cardMenuAberto = null;
+  }
+
+  function moverProcessoParaEtapa(processo, novaEtapa) {
+    if (!processo || !novaEtapa || !columnElements.has(novaEtapa)) {
+      return;
+    }
+
+    processo.etapa = novaEtapa;
+    processo.etapaNome = obterNomeEtapa(novaEtapa, columns);
+    renderizarQuadro();
+  }
+
+  function excluirProcesso(processo) {
+    const indice = processos.indexOf(processo);
+    if (indice === -1) {
+      return;
+    }
+    processos.splice(indice, 1);
+    renderizarQuadro();
+  }
+
+  function configurarAreasDeSoltar() {
+    columnDropZones = new Map();
+
+    columnElements.forEach(function (coluna, id) {
+      const zona = coluna ? coluna.querySelector('.column-cards') : null;
+      if (!zona) {
+        return;
+      }
+
+      zona.dataset.dropColumn = id;
+
+      zona.addEventListener('dragover', function (event) {
+        if (!processoEmArraste) {
+          return;
+        }
+        event.preventDefault();
+        zona.classList.add('column-cards--over');
+        if (event.dataTransfer) {
+          event.dataTransfer.dropEffect = 'move';
+        }
+      });
+
+      zona.addEventListener('dragenter', function (event) {
+        if (!processoEmArraste) {
+          return;
+        }
+        event.preventDefault();
+        zona.classList.add('column-cards--over');
+      });
+
+      zona.addEventListener('dragleave', function () {
+        if (!processoEmArraste) {
+          return;
+        }
+        zona.classList.remove('column-cards--over');
+      });
+
+      zona.addEventListener('drop', function (event) {
+        if (!processoEmArraste) {
+          return;
+        }
+        event.preventDefault();
+        zona.classList.remove('column-cards--over');
+        const destino = zona.dataset.dropColumn;
+        moverProcessoParaEtapa(processoEmArraste, destino);
+        processoEmArraste = null;
+      });
+
+      columnDropZones.set(id, zona);
+    });
+  }
+
+  function limparDestaquesDeSoltar() {
+    columnDropZones.forEach(function (zona) {
+      zona.classList.remove('column-cards--over');
+    });
   }
 
   function renderizarLista(processosFiltrados, comparator) {
@@ -932,10 +1202,54 @@
 
     const cabecalho = document.createElement('thead');
     const linhaCabecalho = document.createElement('tr');
-    ['ID', 'Nº Processo', 'Réu', 'CPF/CNPJ', 'Valor da Causa (R$)', 'Status'].forEach(function (titulo) {
+    const colunasLista = [
+      { id: 'id', label: 'ID' },
+      { id: 'numero', label: 'Nº Processo' },
+      { id: 'reu', label: 'Réu' },
+      { id: 'documento', label: 'CPF/CNPJ' },
+      { id: 'valor', label: 'Valor da Causa (R$)', ordenavel: true },
+      { id: 'status', label: 'Status' }
+    ];
+
+    valorSortToggleButton = null;
+
+    colunasLista.forEach(function (coluna) {
       const th = document.createElement('th');
       th.scope = 'col';
-      th.textContent = titulo;
+
+      if (coluna.ordenavel) {
+        const wrapper = document.createElement('span');
+        wrapper.className = 'table-sortable';
+
+        const rotulo = document.createElement('span');
+        rotulo.textContent = coluna.label;
+
+        const botaoOrdenacao = document.createElement('button');
+        botaoOrdenacao.type = 'button';
+        botaoOrdenacao.className = 'table-sort-toggle';
+        botaoOrdenacao.setAttribute('aria-label', 'Alternar ordenação por valor da causa');
+        botaoOrdenacao.setAttribute('aria-pressed', 'false');
+        botaoOrdenacao.dataset.direction = 'desc';
+        botaoOrdenacao.dataset.active = 'false';
+
+        botaoOrdenacao.addEventListener('click', function (event) {
+          event.stopPropagation();
+          const atual = filtrosAtivos.sort;
+          const proximo = atual === 'valor-asc' ? 'valor-desc' : 'valor-asc';
+          filtrosAtivos.sort = proximo;
+          if (sortFilter) {
+            sortFilter.value = proximo;
+          }
+          renderizarQuadro();
+        });
+
+        valorSortToggleButton = botaoOrdenacao;
+        wrapper.append(rotulo, botaoOrdenacao);
+        th.appendChild(wrapper);
+      } else {
+        th.textContent = coluna.label;
+      }
+
       linhaCabecalho.appendChild(th);
     });
     cabecalho.appendChild(linhaCabecalho);
@@ -993,6 +1307,37 @@
 
     tabela.append(cabecalho, corpo);
     listView.appendChild(tabela);
+
+    atualizarIndicadorOrdenacaoValor();
+  }
+
+  function atualizarIndicadorOrdenacaoValor() {
+    if (!valorSortToggleButton) {
+      return;
+    }
+
+    const tipoAtual = filtrosAtivos.sort;
+    const ehOrdenacaoPorValor = tipoAtual === 'valor-asc' || tipoAtual === 'valor-desc';
+    const direcaoAtual = tipoAtual === 'valor-asc' ? 'asc' : 'desc';
+    const proximoTipo = tipoAtual === 'valor-asc' ? 'valor-desc' : 'valor-asc';
+    const descricaoAtual = direcaoAtual === 'asc' ? 'menor valor primeiro' : 'maior valor primeiro';
+    const descricaoProxima = proximoTipo === 'valor-asc' ? 'menor valor primeiro' : 'maior valor primeiro';
+
+    valorSortToggleButton.dataset.active = ehOrdenacaoPorValor ? 'true' : 'false';
+    valorSortToggleButton.dataset.direction = ehOrdenacaoPorValor ? direcaoAtual : 'desc';
+    valorSortToggleButton.setAttribute('aria-pressed', ehOrdenacaoPorValor ? 'true' : 'false');
+    valorSortToggleButton.setAttribute(
+      'title',
+      ehOrdenacaoPorValor
+        ? 'Ordenando por ' + descricaoAtual
+        : 'Ordenar por valor da causa'
+    );
+    valorSortToggleButton.setAttribute(
+      'aria-label',
+      ehOrdenacaoPorValor
+        ? 'Alterar para ' + descricaoProxima
+        : 'Ordenar por valor da causa (' + descricaoProxima + ')'
+    );
   }
 
   function atualizarStatusProcesso(processo, novoStatus) {
