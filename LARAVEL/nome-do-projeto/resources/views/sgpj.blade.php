@@ -108,12 +108,58 @@
           <button class="tab" role="tab" aria-selected="false">Busca E apreensão</button>
         </div>
         <div class="toolbar-actions">
-          <button class="icon-button" type="button" aria-label="Exportar quadro">
+          <button
+            class="icon-button"
+            type="button"
+            aria-label="Exportar processos em Excel"
+            data-export
+          >
             <span aria-hidden="true">⤓</span>
           </button>
-          <button class="icon-button" type="button" aria-label="Configurações">
-            <span aria-hidden="true">⚙</span>
-          </button>
+          <div class="toolbar-actions__settings">
+            <button
+              class="icon-button"
+              type="button"
+              aria-label="Configurações de exportação"
+              data-export-settings
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              <span aria-hidden="true">⚙</span>
+            </button>
+            <div
+              class="export-popover"
+              id="export-popover"
+              role="dialog"
+              aria-modal="false"
+              hidden
+            >
+              <div class="export-popover__header">
+                <h3 class="export-popover__title">Configurações</h3>
+                <button
+                  class="icon-button export-popover__close"
+                  type="button"
+                  aria-label="Fechar configurações de exportação"
+                  data-export-close
+                >
+                  <span aria-hidden="true">✕</span>
+                </button>
+              </div>
+              <div class="export-popover__content">
+                <fieldset class="export-popover__group">
+                  <legend>Ordenar valores</legend>
+                  <label class="export-popover__option">
+                    <input type="radio" name="export-order" value="valor-desc" checked />
+                    Do maior para o menor
+                  </label>
+                  <label class="export-popover__option">
+                    <input type="radio" name="export-order" value="valor-asc" />
+                    Do menor valor para o maior valor
+                  </label>
+                </fieldset>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
