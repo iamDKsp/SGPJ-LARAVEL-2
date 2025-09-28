@@ -23,10 +23,56 @@
     currency: 'BRL'
   });
 
-  const usuariosPermitidos = {
-    tarcisio: { senha: '123', nome: 'Tarcisio' },
-    lucas: { senha: '123', nome: 'Lucas' }
-  };
+  const RESPONSAVEIS = [
+    {
+      id: 'rafael',
+      nome: 'Rafael',
+      inicial: 'R',
+      login: 'rafael@sgpj.com',
+      senha: '123456789'
+    },
+    {
+      id: 'bruno',
+      nome: 'Bruno',
+      inicial: 'B',
+      login: 'bruno@sgpj.com',
+      senha: '123456789'
+    },
+    {
+      id: 'renan',
+      nome: 'Renan',
+      inicial: 'R',
+      login: 'renan@spgj.com',
+      senha: '123456789'
+    }
+  ];
+
+  const RESPONSAVEIS_POR_ID = new Map(
+    RESPONSAVEIS.map(function (responsavel) {
+      return [responsavel.id, responsavel];
+    })
+  );
+
+  const RESPONSAVEL_SEM_ATRIBUICAO = 'none';
+  const RESPONSAVEL_ICONE_PADRAO = '👤';
+
+  const usuariosPermitidos = (function () {
+    const mapa = {
+      tarcisio: { senha: '123', nome: 'Tarcisio' },
+      lucas: { senha: '123', nome: 'Lucas' }
+    };
+
+    RESPONSAVEIS.forEach(function (responsavel) {
+      if (responsavel.login) {
+        mapa[responsavel.login.toLowerCase()] = {
+          senha: responsavel.senha,
+          nome: responsavel.nome
+        };
+      }
+    });
+
+    return mapa;
+  }());
 
   const LOGIN_STORAGE_KEY = 'sgpj-dashboard-usuario';
   const THEME_STORAGE_KEY = 'sgpj-dashboard-tema';
@@ -34,12 +80,14 @@
   let processos = [];
   let filtrosAtivos = {
     status: 'all',
+    responsavel: 'all',
     search: '',
     sort: 'recent'
   };
 
   let columnElements = new Map();
   let statusFilter;
+  let responsavelFilter;
   let sortFilter;
   let searchInput;
   let clearFiltersButton;
@@ -77,6 +125,7 @@
   let temaAtual = 'light';
   let valorSortToggleButton = null;
   let cardMenuAberto = null;
+  let responsavelMenuAberto = null;
   let processoEmArraste = null;
   let columnDropZones = new Map();
 
@@ -185,10 +234,11 @@
   }
 
   function validarCredenciais(usuario, senha) {
-    if (!usuario || !senha) {
+    const usuarioNormalizado = (usuario || '').trim().toLowerCase();
+    if (!usuarioNormalizado || !senha) {
       return null;
     }
-    const credencial = usuariosPermitidos[usuario];
+    const credencial = usuariosPermitidos[usuarioNormalizado];
     if (!credencial) {
       return null;
     }
@@ -196,7 +246,7 @@
     if (senhaEsperada !== senha.toLowerCase()) {
       return null;
     }
-    return obterDadosUsuario(usuario);
+    return obterDadosUsuario(usuarioNormalizado);
   }
 
   function concluirLogin(dadosUsuario, opcoes) {
@@ -240,11 +290,15 @@
   }
 
   function armazenarSessao(usuario) {
-    if (typeof window === 'undefined' || !usuario) {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const chave = (usuario || '').toLowerCase();
+    if (!chave) {
       return;
     }
     try {
-      window.localStorage.setItem(LOGIN_STORAGE_KEY, usuario);
+      window.localStorage.setItem(LOGIN_STORAGE_KEY, chave);
     } catch (erro) {
       console.warn('Não foi possível persistir a sessão.', erro);
     }
@@ -308,16 +362,17 @@
   }
 
   function obterDadosUsuario(usuario) {
-    if (!usuario) {
+    const usuarioNormalizado = (usuario || '').trim().toLowerCase();
+    if (!usuarioNormalizado) {
       return null;
     }
-    const credencial = usuariosPermitidos[usuario];
+    const credencial = usuariosPermitidos[usuarioNormalizado];
     if (!credencial) {
       return null;
     }
     return {
-      username: usuario,
-      nome: credencial.nome || capitalizar(usuario)
+      username: usuarioNormalizado,
+      nome: credencial.nome || capitalizar(usuarioNormalizado)
     };
   }
 
@@ -334,6 +389,7 @@
     configurarAreasDeSoltar();
 
     statusFilter = document.getElementById('status-filter');
+    responsavelFilter = document.getElementById('responsavel-filter');
     sortFilter = document.getElementById('sort-filter');
     searchInput = document.getElementById('search-input');
     clearFiltersButton = document.getElementById('clear-filters');
@@ -341,6 +397,7 @@
     boardView = boardView || document.getElementById('board-view');
     listView = listView || document.getElementById('board-list');
 
+    popularFiltroResponsavel(processos, responsavelFilter);
     carregarProcessos();
     registrarEventos();
     appInitialized = true;
@@ -598,6 +655,9 @@
       const baseProcesso = Object.assign({}, processo, { status: statusNormalizado });
       const valorNumerico = parseCurrency(processo.valor_causa);
       const etapa = determinarEtapa(baseProcesso, index, columns);
+      const responsavelId = normalizarResponsavelId(
+        processo.responsavelId || processo.responsavel_id || processo.responsavel
+      );
 
       return Object.assign({}, baseProcesso, {
         etapa: etapa,
@@ -605,11 +665,13 @@
         valorNumerico: valorNumerico,
         valorFormatado: Number.isFinite(valorNumerico)
           ? moedaFormatter.format(valorNumerico)
-          : processo.valor_causa
+          : processo.valor_causa,
+        responsavelId: responsavelId
       });
     });
 
     popularFiltroStatus(processos, statusFilter);
+    popularFiltroResponsavel(processos, responsavelFilter);
     renderizarQuadro();
   }
 
@@ -617,6 +679,13 @@
     if (statusFilter) {
       statusFilter.addEventListener('change', function (event) {
         filtrosAtivos.status = event.target.value;
+        renderizarQuadro();
+      });
+    }
+
+    if (responsavelFilter) {
+      responsavelFilter.addEventListener('change', function (event) {
+        filtrosAtivos.responsavel = event.target.value;
         renderizarQuadro();
       });
     }
@@ -637,9 +706,12 @@
 
     if (clearFiltersButton) {
       clearFiltersButton.addEventListener('click', function () {
-        filtrosAtivos = { status: 'all', search: '', sort: 'recent' };
+        filtrosAtivos = { status: 'all', responsavel: 'all', search: '', sort: 'recent' };
         if (statusFilter) {
           statusFilter.value = 'all';
+        }
+        if (responsavelFilter) {
+          responsavelFilter.value = 'all';
         }
         if (sortFilter) {
           sortFilter.value = 'recent';
@@ -701,6 +773,15 @@
           fecharMenuCard();
         }
       }
+
+      if (responsavelMenuAberto && responsavelMenuAberto.container) {
+        const clicouNoMenuResponsavel = responsavelMenuAberto.container.contains(event.target);
+        const clicouNoBotaoResponsavel =
+          responsavelMenuAberto.trigger && responsavelMenuAberto.trigger.contains(event.target);
+        if (!clicouNoMenuResponsavel && !clicouNoBotaoResponsavel) {
+          fecharMenuResponsavel();
+        }
+      }
     });
 
     document.addEventListener('keydown', function (event) {
@@ -710,6 +791,9 @@
         }
         if (cardMenuAberto) {
           fecharMenuCard();
+        }
+        if (responsavelMenuAberto) {
+          fecharMenuResponsavel();
         }
       }
     });
@@ -725,6 +809,7 @@
 
   function renderizarQuadro() {
     fecharMenuCard();
+    fecharMenuResponsavel();
     limparDestaquesDeSoltar();
     const comparator = obterComparador(filtrosAtivos.sort);
     const processosFiltrados = obterProcessosFiltrados();
@@ -775,6 +860,9 @@
         return filtrarPorStatus(processo, filtrosAtivos.status);
       })
       .filter(function (processo) {
+        return filtrarPorResponsavel(processo, filtrosAtivos.responsavel);
+      })
+      .filter(function (processo) {
         return filtrarPorPesquisa(processo, filtrosAtivos.search);
       });
   }
@@ -806,6 +894,16 @@
     }
     const statusProcesso = normalizarStatus(processo.status);
     return statusProcesso === normalizarStatus(statusAtual);
+  }
+
+  function filtrarPorResponsavel(processo, responsavelAtual) {
+    if (responsavelAtual === 'all') {
+      return true;
+    }
+    if (responsavelAtual === RESPONSAVEL_SEM_ATRIBUICAO) {
+      return !processo.responsavelId;
+    }
+    return processo.responsavelId === responsavelAtual;
   }
 
   function filtrarPorPesquisa(processo, termo) {
@@ -864,6 +962,7 @@
     card.addEventListener('dragstart', function (event) {
       processoEmArraste = processo;
       fecharMenuCard();
+      fecharMenuResponsavel();
       card.classList.add('deal-card--dragging');
       if (event.dataTransfer) {
         event.dataTransfer.effectAllowed = 'move';
@@ -934,10 +1033,16 @@
     visualizar.setAttribute('aria-label', 'Abrir detalhes do processo ' + processo.numero_processo);
     visualizar.textContent = '👁';
 
-    const lembrar = document.createElement('button');
-    lembrar.type = 'button';
-    lembrar.setAttribute('aria-label', 'Adicionar lembrete para ' + (processo.nome_reu || 'o cliente'));
-    lembrar.textContent = '⏰';
+    const responsavelBotao = document.createElement('button');
+    responsavelBotao.type = 'button';
+    responsavelBotao.className = 'card-responsible card-responsible--empty';
+    responsavelBotao.setAttribute('aria-haspopup', 'listbox');
+    responsavelBotao.setAttribute('aria-expanded', 'false');
+    atualizarBotaoResponsavel(responsavelBotao, processo);
+    responsavelBotao.addEventListener('click', function (event) {
+      event.stopPropagation();
+      alternarMenuResponsavel(processo, responsavelBotao, card);
+    });
 
     const menu = document.createElement('button');
     menu.type = 'button';
@@ -958,7 +1063,7 @@
       }
     });
 
-    actions.append(visualizar, lembrar, menu);
+    actions.append(visualizar, responsavelBotao, menu);
     rodape.append(etapaPill, actions);
 
     card.append(cabecalho, titulo, meta, rodape);
@@ -979,6 +1084,7 @@
       return;
     }
 
+    fecharMenuResponsavel();
     fecharMenuCard();
 
     const menu = document.createElement('div');
@@ -1077,11 +1183,15 @@
       trigger.setAttribute('aria-expanded', 'true');
     }
 
+    card.classList.add('deal-card--menu-open');
+    card.draggable = false;
+
     cardMenuAberto = {
       container: menu,
       trigger: trigger,
       moverSubmenu: moverSubmenu,
-      moverBotao: moverBotao
+      moverBotao: moverBotao,
+      card: card
     };
   }
 
@@ -1102,7 +1212,153 @@
       cardMenuAberto.container.parentNode.removeChild(cardMenuAberto.container);
     }
 
+    if (cardMenuAberto.card) {
+      cardMenuAberto.card.classList.remove('deal-card--menu-open');
+      cardMenuAberto.card.draggable = true;
+    }
+
     cardMenuAberto = null;
+  }
+
+  function alternarMenuResponsavel(processo, trigger, card) {
+    if (responsavelMenuAberto && responsavelMenuAberto.trigger === trigger) {
+      fecharMenuResponsavel();
+      return;
+    }
+
+    abrirMenuResponsavel(processo, trigger, card);
+  }
+
+  function abrirMenuResponsavel(processo, trigger, card) {
+    if (!card) {
+      return;
+    }
+
+    fecharMenuResponsavel();
+    fecharMenuCard();
+
+    const menu = document.createElement('div');
+    menu.className = 'responsible-menu';
+    menu.setAttribute('role', 'listbox');
+    menu.setAttribute('aria-label', 'Selecionar responsável');
+    menu.addEventListener('click', function (event) {
+      event.stopPropagation();
+    });
+
+    const lista = document.createElement('ul');
+    lista.className = 'responsible-menu__list';
+
+    const opcoes = [
+      { value: RESPONSAVEL_SEM_ATRIBUICAO, label: 'Sem responsável' }
+    ];
+
+    RESPONSAVEIS.forEach(function (responsavel) {
+      opcoes.push({ value: responsavel.id, label: responsavel.nome });
+    });
+
+    opcoes.forEach(function (opcao) {
+      const item = document.createElement('li');
+      const botao = document.createElement('button');
+      botao.type = 'button';
+      botao.className = 'responsible-menu__button';
+      botao.textContent = opcao.label;
+      botao.dataset.value = opcao.value;
+      botao.setAttribute('role', 'option');
+
+      const ehAtual =
+        (opcao.value === RESPONSAVEL_SEM_ATRIBUICAO && !processo.responsavelId) ||
+        opcao.value === processo.responsavelId;
+
+      botao.setAttribute('aria-selected', ehAtual ? 'true' : 'false');
+      if (ehAtual) {
+        botao.classList.add('is-active');
+      }
+
+      botao.addEventListener('click', function (event) {
+        event.stopPropagation();
+        const novoValor = opcao.value === RESPONSAVEL_SEM_ATRIBUICAO ? null : opcao.value;
+        atribuirResponsavel(processo, novoValor);
+      });
+
+      item.appendChild(botao);
+      lista.appendChild(item);
+    });
+
+    menu.appendChild(lista);
+    card.appendChild(menu);
+
+    if (trigger) {
+      trigger.setAttribute('aria-expanded', 'true');
+    }
+
+    card.classList.add('deal-card--menu-open');
+    card.draggable = false;
+
+    responsavelMenuAberto = {
+      container: menu,
+      trigger: trigger,
+      card: card
+    };
+  }
+
+  function fecharMenuResponsavel() {
+    if (!responsavelMenuAberto) {
+      return;
+    }
+
+    if (responsavelMenuAberto.trigger) {
+      responsavelMenuAberto.trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    if (responsavelMenuAberto.container && responsavelMenuAberto.container.parentNode) {
+      responsavelMenuAberto.container.parentNode.removeChild(responsavelMenuAberto.container);
+    }
+
+    if (responsavelMenuAberto.card) {
+      responsavelMenuAberto.card.classList.remove('deal-card--menu-open');
+      responsavelMenuAberto.card.draggable = true;
+    }
+
+    responsavelMenuAberto = null;
+  }
+
+  function atribuirResponsavel(processo, responsavelId) {
+    if (!processo) {
+      return;
+    }
+
+    processo.responsavelId = responsavelId || null;
+    fecharMenuResponsavel();
+    renderizarQuadro();
+  }
+
+  function atualizarBotaoResponsavel(botao, processo) {
+    if (!botao) {
+      return;
+    }
+
+    botao.classList.remove('card-responsible--assigned', 'card-responsible--empty');
+
+    const responsavel = obterResponsavelPorId(processo.responsavelId);
+    const numeroProcesso = formatarNumeroProcesso(processo.numero_processo);
+
+    if (responsavel) {
+      botao.textContent = obterInicialResponsavel(responsavel);
+      botao.classList.add('card-responsible--assigned');
+      botao.setAttribute('title', 'Responsável: ' + responsavel.nome);
+      botao.setAttribute(
+        'aria-label',
+        'Alterar responsável do processo ' + numeroProcesso + ' (atual: ' + responsavel.nome + ')'
+      );
+    } else {
+      botao.textContent = RESPONSAVEL_ICONE_PADRAO;
+      botao.classList.add('card-responsible--empty');
+      botao.setAttribute('title', 'Definir responsável');
+      botao.setAttribute(
+        'aria-label',
+        'Definir responsável para o processo ' + numeroProcesso
+      );
+    }
   }
 
   function moverProcessoParaEtapa(processo, novaEtapa) {
@@ -1208,6 +1464,7 @@
       { id: 'reu', label: 'Réu' },
       { id: 'documento', label: 'CPF/CNPJ' },
       { id: 'valor', label: 'Valor da Causa (R$)', ordenavel: true },
+      { id: 'responsavel', label: 'Responsável' },
       { id: 'status', label: 'Status' }
     ];
 
@@ -1275,6 +1532,35 @@
       const celulaValor = document.createElement('td');
       celulaValor.textContent = processo.valorFormatado || processo.valor_causa || '—';
 
+      const celulaResponsavel = document.createElement('td');
+      const responsavelSelect = document.createElement('select');
+      responsavelSelect.className = 'responsible-select';
+      responsavelSelect.setAttribute(
+        'aria-label',
+        'Definir responsável do processo ' + formatarNumeroProcesso(processo.numero_processo)
+      );
+
+      const optionSemResponsavel = document.createElement('option');
+      optionSemResponsavel.value = RESPONSAVEL_SEM_ATRIBUICAO;
+      optionSemResponsavel.textContent = 'Sem responsável';
+      responsavelSelect.appendChild(optionSemResponsavel);
+
+      RESPONSAVEIS.forEach(function (responsavel) {
+        const optionResponsavel = document.createElement('option');
+        optionResponsavel.value = responsavel.id;
+        optionResponsavel.textContent = responsavel.nome;
+        responsavelSelect.appendChild(optionResponsavel);
+      });
+
+      responsavelSelect.value = processo.responsavelId || RESPONSAVEL_SEM_ATRIBUICAO;
+      responsavelSelect.addEventListener('change', function (event) {
+        const novoResponsavel =
+          event.target.value === RESPONSAVEL_SEM_ATRIBUICAO ? null : event.target.value;
+        atribuirResponsavel(processo, novoResponsavel);
+      });
+
+      celulaResponsavel.appendChild(responsavelSelect);
+
       const celulaStatus = document.createElement('td');
       const seletorStatus = document.createElement('select');
       seletorStatus.className = 'status-select status-chip';
@@ -1301,7 +1587,15 @@
 
       celulaStatus.appendChild(seletorStatus);
 
-      linha.append(celulaId, celulaNumero, celulaReu, celulaDocumento, celulaValor, celulaStatus);
+      linha.append(
+        celulaId,
+        celulaNumero,
+        celulaReu,
+        celulaDocumento,
+        celulaValor,
+        celulaResponsavel,
+        celulaStatus
+      );
       corpo.appendChild(linha);
     });
 
@@ -1451,6 +1745,69 @@
     }
   }
 
+  function popularFiltroResponsavel(listaProcessos, selectElement) {
+    if (!selectElement) {
+      return;
+    }
+
+    const valorAtual = selectElement.value || filtrosAtivos.responsavel || 'all';
+    selectElement.innerHTML = '';
+
+    const opcoes = [
+      { value: 'all', label: 'Todos os responsáveis' },
+      { value: RESPONSAVEL_SEM_ATRIBUICAO, label: 'Sem responsável' }
+    ];
+
+    RESPONSAVEIS.forEach(function (responsavel) {
+      opcoes.push({ value: responsavel.id, label: responsavel.nome });
+    });
+
+    opcoes.forEach(function (opcao) {
+      const option = document.createElement('option');
+      option.value = opcao.value;
+      option.textContent = opcao.label;
+      selectElement.appendChild(option);
+    });
+
+    const valoresDisponiveis = opcoes.map(function (opcao) {
+      return opcao.value;
+    });
+
+    if (valoresDisponiveis.indexOf(valorAtual) !== -1) {
+      selectElement.value = valorAtual;
+      filtrosAtivos.responsavel = valorAtual;
+    } else {
+      selectElement.value = 'all';
+      filtrosAtivos.responsavel = 'all';
+    }
+  }
+
+  function obterResponsavelPorId(id) {
+    if (!id && id !== 0) {
+      return null;
+    }
+    const chave = id.toString().toLowerCase();
+    if (RESPONSAVEIS_POR_ID.has(chave)) {
+      return RESPONSAVEIS_POR_ID.get(chave);
+    }
+    return null;
+  }
+
+  function obterInicialResponsavel(responsavel) {
+    if (!responsavel) {
+      return '';
+    }
+    if (responsavel.inicial) {
+      return responsavel.inicial.toString().charAt(0).toUpperCase();
+    }
+    return responsavel.nome ? responsavel.nome.charAt(0).toUpperCase() : '';
+  }
+
+  function obterNomeResponsavel(id) {
+    const responsavel = obterResponsavelPorId(id);
+    return responsavel ? responsavel.nome : '';
+  }
+
   function aplicarClasseStatus(elemento, status) {
     if (!elemento || !elemento.classList) {
       return;
@@ -1503,6 +1860,33 @@
     return STATUS_OPTIONS[0].value;
   }
 
+  function normalizarResponsavelId(valor) {
+    if (!valor && valor !== 0) {
+      return null;
+    }
+
+    const texto = valor.toString().trim().toLowerCase();
+    if (!texto || texto === RESPONSAVEL_SEM_ATRIBUICAO) {
+      return null;
+    }
+
+    if (RESPONSAVEIS_POR_ID.has(texto)) {
+      return texto;
+    }
+
+    for (let i = 0; i < RESPONSAVEIS.length; i += 1) {
+      const responsavel = RESPONSAVEIS[i];
+      if (responsavel.login && responsavel.login.toLowerCase() === texto) {
+        return responsavel.id;
+      }
+      if (responsavel.nome && responsavel.nome.toLowerCase() === texto) {
+        return responsavel.id;
+      }
+    }
+
+    return null;
+  }
+
   function exportarProcessos() {
     const processosParaExportar = obterProcessosFiltrados();
     if (!processosParaExportar.length) {
@@ -1520,6 +1904,7 @@
       'Réu',
       'CPF/CNPJ',
       'Valor da Causa (R$)',
+      'Responsável',
       'Status'
     ];
 
@@ -1531,6 +1916,7 @@
           processo.nome_reu || 'Cliente sem nome',
           processo.cpf_cnpj_reu || 'Não informado',
           processo.valorFormatado || processo.valor_causa || '',
+          obterNomeResponsavel(processo.responsavelId) || 'Sem responsável',
           obterRotuloStatus(processo.status)
         ];
       })

@@ -48,7 +48,7 @@
             <span>Lembrar-me neste dispositivo</span>
           </label>
           <button class="login-submit" type="submit">Entrar</button>
-          <p class="login-hint">Usuários autorizados: Rafael · Bruno · Renan</p>
+          <p class="login-hint">Usuários autorizados: Tarcisio · Lucas · bruno@sgpj.com · rafael@sgpj.com · renan@spgj.com</p>
           <p class="login-error" id="login-error" role="alert" aria-live="polite"></p>
         </form>
       </section>
@@ -70,7 +70,7 @@
           <div class="header-title-group">
             <span class="header-eyebrow">SGPJ</span>
             <h1 class="header-title">Causas</h1>
-            <span class="header-subtitle">Bancárias</span>
+            <span class="header-subtitle">DASHBOARDS</span>
           </div>
           <span class="header-user" id="logged-user" hidden>Olá, <strong></strong></span>
           <span class="header-chip" id="total-processos">0 processos</span>
@@ -102,10 +102,9 @@
 
       <section class="board-toolbar" aria-label="Opções da visualização">
         <div class="toolbar-tabs" role="tablist" aria-label="Filtros rápidos">
-          <button class="tab is-active" role="tab" aria-selected="true">Todas as negociações</button>
-          <button class="tab" role="tab" aria-selected="false">Bancárias</button>
-          <button class="tab" role="tab" aria-selected="false">Empresáriais</button>
-          <button class="tab" role="tab" aria-selected="false">Busca E apreensão</button>
+          <button class="tab is-active" role="tab" aria-selected="true">CRM</button>
+          <button class="tab" role="tab" aria-selected="false">DASHBOARDS</button>
+          <button class="tab" role="tab" aria-selected="false">TAREFAS</button>
         </div>
         <div class="toolbar-actions">
           <button
@@ -175,6 +174,12 @@
           <span class="filter-label">Status</span>
           <select id="status-filter">
             <option value="all">Todos os status</option>
+          </select>
+        </label>
+        <label class="filter">
+          <span class="filter-label">Responsável</span>
+          <select id="responsavel-filter">
+            <option value="all">Todos os responsáveis</option>
           </select>
         </label>
         <label class="filter">
