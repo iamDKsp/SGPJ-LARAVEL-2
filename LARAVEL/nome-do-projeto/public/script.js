@@ -7,6 +7,8 @@
     { id: 'finalizados', label: 'Finalizados' }
   ];
 
+  const STATUS_PADROES = ['pendente', 'perdido', 'finalizado'];
+
   const moedaFormatter = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL'
@@ -563,6 +565,7 @@
       const etapa = determinarEtapa(processo, index, columns);
 
       return Object.assign({}, processo, {
+        indiceOriginal: index,
         etapa: etapa,
         etapaNome: obterNomeEtapa(etapa, columns),
         valorNumerico: valorNumerico,
@@ -853,7 +856,45 @@
     ['ID', 'Nº Processo', 'Réu', 'CPF/CNPJ', 'Valor da Causa (R$)', 'Status'].forEach(function (titulo) {
       const th = document.createElement('th');
       th.scope = 'col';
-      th.textContent = titulo;
+
+      if (titulo === 'Valor da Causa (R$)') {
+        const texto = document.createElement('span');
+        texto.textContent = titulo;
+        th.appendChild(texto);
+
+        const botaoOrdenacao = document.createElement('button');
+        botaoOrdenacao.type = 'button';
+        botaoOrdenacao.className = 'value-sort-button';
+        botaoOrdenacao.setAttribute('aria-label', 'Alternar ordenação por valor da causa');
+
+        const ordenacaoAtual = filtrosAtivos.sort;
+        const estaAscendente = ordenacaoAtual === 'valor-asc';
+        if (estaAscendente) {
+          botaoOrdenacao.classList.add('is-ascending');
+        }
+        botaoOrdenacao.textContent = estaAscendente ? '▴' : '▾';
+
+        botaoOrdenacao.addEventListener('click', function () {
+          let proximaOrdenacao = 'valor-desc';
+          if (filtrosAtivos.sort === 'valor-desc') {
+            proximaOrdenacao = 'valor-asc';
+          } else if (filtrosAtivos.sort === 'valor-asc') {
+            proximaOrdenacao = 'valor-desc';
+          }
+
+          filtrosAtivos.sort = proximaOrdenacao;
+          if (sortFilter) {
+            sortFilter.value = proximaOrdenacao;
+          }
+
+          renderizarQuadro();
+        });
+
+        th.appendChild(botaoOrdenacao);
+      } else {
+        th.textContent = titulo;
+      }
+
       linhaCabecalho.appendChild(th);
     });
     cabecalho.appendChild(linhaCabecalho);
@@ -880,11 +921,40 @@
       celulaValor.textContent = processo.valorFormatado || processo.valor_causa || '—';
 
       const celulaStatus = document.createElement('td');
-      const badgeStatus = document.createElement('span');
-      badgeStatus.className = 'status-badge';
       const statusNormalizado = (processo.status || '').toLowerCase();
-      badgeStatus.textContent = statusNormalizado ? capitalizar(statusNormalizado) : 'Sem status';
-      celulaStatus.appendChild(badgeStatus);
+
+      const wrapperStatus = document.createElement('div');
+      wrapperStatus.className = 'status-editor';
+
+      const seletorStatus = document.createElement('select');
+      seletorStatus.className = 'status-selector';
+      seletorStatus.setAttribute(
+        'aria-label',
+        'Alterar status do processo ' + formatarNumeroProcesso(processo.numero_processo)
+      );
+
+      const opcoesDisponiveis = STATUS_PADROES.slice();
+      if (statusNormalizado && opcoesDisponiveis.indexOf(statusNormalizado) === -1) {
+        opcoesDisponiveis.push(statusNormalizado);
+      }
+
+      opcoesDisponiveis.forEach(function (status) {
+        const option = document.createElement('option');
+        option.value = status;
+        option.textContent = capitalizar(status);
+        seletorStatus.appendChild(option);
+      });
+
+      if (statusNormalizado && opcoesDisponiveis.indexOf(statusNormalizado) !== -1) {
+        seletorStatus.value = statusNormalizado;
+      }
+
+      seletorStatus.addEventListener('change', function (event) {
+        atualizarStatusProcesso(processo.id, event.target.value);
+      });
+
+      wrapperStatus.appendChild(seletorStatus);
+      celulaStatus.appendChild(wrapperStatus);
 
       linha.append(celulaId, celulaNumero, celulaReu, celulaDocumento, celulaValor, celulaStatus);
       corpo.appendChild(linha);
@@ -892,6 +962,33 @@
 
     tabela.append(cabecalho, corpo);
     listView.appendChild(tabela);
+  }
+
+  function atualizarStatusProcesso(id, novoStatus) {
+    const statusNormalizado = (novoStatus || '').toLowerCase();
+    if (!statusNormalizado) {
+      return;
+    }
+
+    const processo = processos.find(function (item) {
+      return item.id === id;
+    });
+
+    if (!processo) {
+      return;
+    }
+
+    processo.status = statusNormalizado.toUpperCase();
+
+    const indiceReferencia = Number.isInteger(processo.indiceOriginal)
+      ? processo.indiceOriginal
+      : 0;
+    const novaEtapa = determinarEtapa(processo, indiceReferencia, columns);
+    processo.etapa = novaEtapa;
+    processo.etapaNome = obterNomeEtapa(novaEtapa, columns);
+
+    popularFiltroStatus(processos, statusFilter);
+    renderizarQuadro();
   }
 
   function parseCurrency(valor) {
@@ -910,6 +1007,9 @@
   function determinarEtapa(processo, indice, columnsReference) {
     const statusNormalizado = (processo.status || '').toLowerCase();
 
+    if (statusNormalizado.indexOf('perd') !== -1) {
+      return 'finalizados';
+    }
     if (statusNormalizado.indexOf('final') !== -1) {
       return 'finalizados';
     }
@@ -923,6 +1023,9 @@
       return 'orcamento-proposta';
     }
     if (statusNormalizado.indexOf('atend') !== -1) {
+      return 'em-atendimento';
+    }
+    if (statusNormalizado.indexOf('pend') !== -1) {
       return 'em-atendimento';
     }
 
@@ -948,27 +1051,41 @@
       selectElement.remove(1);
     }
 
-    const statusUnicos = Array.from(
-      new Set(
-        listaProcessos
-          .map(function (processo) {
-            return processo.status;
-          })
-          .filter(function (status) {
-            return Boolean(status);
-          })
-          .map(function (status) {
-            return status.toLowerCase();
-          })
-      )
-    ).sort();
+    const conjuntoStatus = new Set(STATUS_PADROES);
 
-    statusUnicos.forEach(function (status) {
+    listaProcessos
+      .map(function (processo) {
+        return processo.status;
+      })
+      .filter(function (status) {
+        return Boolean(status);
+      })
+      .map(function (status) {
+        return status.toLowerCase();
+      })
+      .forEach(function (status) {
+        conjuntoStatus.add(status);
+      });
+
+    const statusOrdenados = Array.from(conjuntoStatus).sort();
+
+    statusOrdenados.forEach(function (status) {
       const option = document.createElement('option');
       option.value = status;
       option.textContent = capitalizar(status);
       selectElement.appendChild(option);
     });
+
+    if (filtrosAtivos.status !== 'all') {
+      if (statusOrdenados.indexOf(filtrosAtivos.status) !== -1) {
+        selectElement.value = filtrosAtivos.status;
+      } else {
+        filtrosAtivos.status = 'all';
+        selectElement.value = 'all';
+      }
+    } else {
+      selectElement.value = 'all';
+    }
   }
 
   function capitalizar(texto) {
