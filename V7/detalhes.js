@@ -23,6 +23,10 @@
   let valor;
   let documento;
   let responsavel;
+  let numeroResumo;
+  let valorResumo;
+  let documentoResumo;
+  let responsavelResumo;
   let atualizado;
   let descricao;
   let voltarBotao;
@@ -49,6 +53,10 @@
     valor = document.getElementById('detail-value');
     documento = document.getElementById('detail-document');
     responsavel = document.getElementById('detail-responsible');
+    numeroResumo = document.getElementById('detail-number-display');
+    valorResumo = document.getElementById('detail-value-display');
+    documentoResumo = document.getElementById('detail-document-display');
+    responsavelResumo = document.getElementById('detail-responsible-display');
     atualizado = document.getElementById('detail-updated');
     descricao = document.getElementById('detail-description');
     voltarBotao = document.getElementById('detail-open-board');
@@ -250,6 +258,8 @@
       atualizado.dateTime = processoAtual.atualizadoEm;
     }
 
+    atualizarResumoCampos();
+
     if (voltarBotao && !voltarBotao.dataset.bound) {
       voltarBotao.dataset.bound = 'true';
       voltarBotao.addEventListener('click', function () {
@@ -312,6 +322,7 @@
         processoAtual.numero_processo = texto;
         evento.target.value = formatarNumeroProcesso(texto);
         registrarAtualizacao();
+        atualizarResumoCampos();
       });
     }
 
@@ -332,6 +343,7 @@
           evento.target.value = formatado;
         }
         registrarAtualizacao();
+        atualizarResumoCampos();
       });
     }
 
@@ -342,6 +354,7 @@
         }
         processoAtual.cpf_cnpj_reu = evento.target.value.trim();
         registrarAtualizacao();
+        atualizarResumoCampos();
       });
     }
 
@@ -353,6 +366,7 @@
         const texto = evento.target.value.trim();
         processoAtual.responsavelNome = texto;
         registrarAtualizacao();
+        atualizarResumoCampos();
       });
     }
 
@@ -381,6 +395,28 @@
       return;
     }
     etapa.textContent = texto || 'Etapa não definida';
+  }
+
+  function atualizarResumoCampos() {
+    if (numeroResumo) {
+      const numeroTexto = numero && numero.value ? numero.value.trim() : '';
+      numeroResumo.textContent = numeroTexto || '—';
+    }
+
+    if (valorResumo) {
+      const valorTexto = valor && valor.value ? valor.value.trim() : '';
+      valorResumo.textContent = valorTexto || '—';
+    }
+
+    if (documentoResumo) {
+      const documentoTexto = documento && documento.value ? documento.value.trim() : '';
+      documentoResumo.textContent = documentoTexto || '—';
+    }
+
+    if (responsavelResumo) {
+      const responsavelTexto = responsavel && responsavel.value ? responsavel.value.trim() : '';
+      responsavelResumo.textContent = responsavelTexto || '—';
+    }
   }
 
   function registrarAtualizacao() {
