@@ -12,7 +12,7 @@
     />
     <link rel="stylesheet" href="{{ asset('styles.css') }}" />
   </head>
-  <body>
+  <body data-detail-template="{{ url('processos') }}/{id}" data-processes-url="{{ asset('processos.json') }}">
     <div class="login-screen" id="login-screen" aria-labelledby="login-title">
       <section class="login-card" role="dialog" aria-modal="true">
         <header class="login-card__header">

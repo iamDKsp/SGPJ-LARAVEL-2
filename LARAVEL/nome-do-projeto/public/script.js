@@ -55,6 +55,7 @@
 
   const RESPONSAVEL_SEM_ATRIBUICAO = 'none';
   const RESPONSAVEL_ICONE_PADRAO = '👤';
+  const DETALHE_STORAGE_KEY = 'sgpj-detalhe-processo';
 
   const usuariosPermitidos = (function () {
     const mapa = {
@@ -951,6 +952,46 @@
     }
   }
 
+  function navegarParaDetalhes(processo) {
+    if (!processo) {
+      return;
+    }
+
+    armazenarProcessoParaDetalhes(processo);
+
+    const template = document.body.getAttribute('data-detail-template') || 'detalhes.html?id={id}';
+    const identificador = processo.id != null ? String(processo.id) : processo.numero_processo || '';
+    if (!identificador) {
+      return;
+    }
+
+    const destino = construirUrlDetalhes(template, identificador);
+    if (!destino) {
+      return;
+    }
+
+    const novaJanela = window.open(destino, '_blank', 'noopener');
+    if (!novaJanela) {
+      window.location.href = destino;
+    }
+  }
+
+  function construirUrlDetalhes(template, identificador) {
+    if (!template) {
+      return '';
+    }
+
+    return template.replace('{id}', encodeURIComponent(identificador));
+  }
+
+  function armazenarProcessoParaDetalhes(processo) {
+    try {
+      sessionStorage.setItem(DETALHE_STORAGE_KEY, JSON.stringify(processo));
+    } catch (error) {
+      console.warn('Não foi possível armazenar o processo para detalhes', error);
+    }
+  }
+
   function criarCardProcesso(processo) {
     const card = document.createElement('article');
     card.className = 'deal-card';
@@ -1030,8 +1071,13 @@
 
     const visualizar = document.createElement('button');
     visualizar.type = 'button';
+    visualizar.className = 'card-action card-action--view';
     visualizar.setAttribute('aria-label', 'Abrir detalhes do processo ' + processo.numero_processo);
     visualizar.textContent = '👁';
+    visualizar.addEventListener('click', function (event) {
+      event.stopPropagation();
+      navegarParaDetalhes(processo);
+    });
 
     const responsavelBotao = document.createElement('button');
     responsavelBotao.type = 'button';
