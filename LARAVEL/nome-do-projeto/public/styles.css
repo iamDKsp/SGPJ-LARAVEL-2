@@ -15,6 +15,13 @@
   --radius-lg: 20px;
   --radius-md: 14px;
   --radius-sm: 10px;
+  --surface-primary: var(--color-surface);
+  --surface-muted: #eef2ff;
+  --text-primary: var(--color-text);
+  --text-secondary: #475569;
+  --text-muted: var(--color-text-muted);
+  --primary-500: #6366f1;
+  --border-soft: rgba(148, 163, 184, 0.32);
 }
 
 * {
@@ -50,6 +57,13 @@ body.theme-dark {
     radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.12), transparent 48%),
     linear-gradient(180deg, #020617 0%, #0f172a 100%);
   color: var(--color-text);
+  --surface-primary: rgba(15, 23, 42, 0.96);
+  --surface-muted: rgba(2, 6, 23, 0.92);
+  --text-primary: var(--color-text);
+  --text-secondary: #cbd5f5;
+  --text-muted: var(--color-text-muted);
+  --primary-500: var(--color-primary);
+  --border-soft: rgba(148, 163, 184, 0.28);
 }
 
 body.theme-dark .login-screen {

@@ -970,10 +970,7 @@
       return;
     }
 
-    const novaJanela = window.open(destino, '_blank', 'noopener');
-    if (!novaJanela) {
-      window.location.href = destino;
-    }
+    window.location.href = destino;
   }
 
   function construirUrlDetalhes(template, identificador) {
