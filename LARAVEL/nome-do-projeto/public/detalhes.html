@@ -20,8 +20,26 @@
     <div class="detail-shell" id="detail-shell" hidden>
       <header class="detail-header">
         <div class="detail-header__primary">
-          <span class="status-chip" id="detail-status">Status</span>
-          <h1 class="detail-title" id="detail-title">Processo</h1>
+          <div class="detail-status-line">
+            <span class="status-chip" id="detail-status">Status</span>
+            <label class="detail-status-control" for="detail-status-select">
+              <span class="detail-status-control__label">Atualizar status</span>
+              <select class="detail-status-control__select" id="detail-status-select">
+                <option value="pendente">Pendente</option>
+                <option value="perdido">Perdido</option>
+                <option value="finalizado">Finalizado</option>
+              </select>
+            </label>
+          </div>
+          <h1 class="detail-title">
+            <input
+              type="text"
+              id="detail-title-input"
+              class="detail-title-input"
+              placeholder="Nome do processo"
+              autocomplete="off"
+            />
+          </h1>
           <p class="detail-stage" id="detail-stage">Etapa do funil</p>
         </div>
         <div class="detail-header__actions">
@@ -33,38 +51,85 @@
       </header>
 
       <section class="detail-grid" aria-labelledby="detail-infos-title">
-        <h2 class="detail-section-title" id="detail-infos-title">Informações do processo</h2>
-        <div class="detail-grid__content">
-          <article class="detail-card">
-            <span class="detail-card__label">Número do processo</span>
-            <p class="detail-card__value" id="detail-number">—</p>
-          </article>
-          <article class="detail-card">
-            <span class="detail-card__label">Valor da causa</span>
-            <p class="detail-card__value" id="detail-value">—</p>
-          </article>
-          <article class="detail-card">
-            <span class="detail-card__label">CPF/CNPJ</span>
-            <p class="detail-card__value" id="detail-document">—</p>
-          </article>
-          <article class="detail-card">
-            <span class="detail-card__label">Responsável</span>
-            <p class="detail-card__value" id="detail-responsible">Não atribuído</p>
-          </article>
+        <div class="detail-grid__head">
+          <h2 class="detail-section-title" id="detail-infos-title">Informações do processo</h2>
+          <p class="detail-grid__subtitle">Personalize os dados conforme a negociação evolui.</p>
         </div>
+        <form class="detail-grid__form" id="detail-form" autocomplete="off" novalidate>
+          <label class="detail-field" for="detail-stage-input">
+            <span class="detail-field__label">Etapa do funil</span>
+            <input
+              type="text"
+              id="detail-stage-input"
+              class="detail-field__input"
+              placeholder="Ex.: Em progresso"
+              autocomplete="off"
+            />
+          </label>
+          <label class="detail-field" for="detail-number">
+            <span class="detail-field__label">Número do processo</span>
+            <input
+              type="text"
+              id="detail-number"
+              class="detail-field__input"
+              inputmode="numeric"
+              placeholder="0000000-00.0000.0.00.0000"
+              autocomplete="off"
+            />
+          </label>
+          <label class="detail-field" for="detail-value">
+            <span class="detail-field__label">Valor da causa</span>
+            <input
+              type="text"
+              id="detail-value"
+              class="detail-field__input"
+              inputmode="decimal"
+              placeholder="R$ 0,00"
+              autocomplete="off"
+            />
+          </label>
+          <label class="detail-field" for="detail-document">
+            <span class="detail-field__label">CPF/CNPJ</span>
+            <input
+              type="text"
+              id="detail-document"
+              class="detail-field__input"
+              placeholder="Insira o documento"
+              autocomplete="off"
+            />
+          </label>
+          <label class="detail-field" for="detail-responsible">
+            <span class="detail-field__label">Responsável</span>
+            <input
+              type="text"
+              id="detail-responsible"
+              class="detail-field__input"
+              placeholder="Selecione o responsável"
+              autocomplete="off"
+            />
+          </label>
+        </form>
       </section>
 
-      <section class="detail-section" aria-labelledby="detail-notes-title">
+      <section class="detail-section detail-notes" aria-labelledby="detail-notes-title">
         <div class="detail-section__header">
-          <h2 class="detail-section-title" id="detail-notes-title">Resumo</h2>
+          <div>
+            <h2 class="detail-section-title" id="detail-notes-title">Resumo e observações</h2>
+            <p class="detail-section__subtitle">
+              Compartilhe os próximos passos, bloqueios e oportunidades do processo.
+            </p>
+          </div>
           <time class="detail-updated" id="detail-updated" datetime="">
             Atualizado agora
           </time>
         </div>
-        <p class="detail-description" id="detail-description">
-          Utilize esta página para acompanhar a negociação em detalhes, adicionar
-          observações internas e anexar documentos importantes relacionados ao processo.
-        </p>
+        <textarea
+          class="detail-notes__editor"
+          id="detail-description"
+          rows="5"
+          placeholder="Registre informações importantes, atualizações e próximos passos da negociação."
+        ></textarea>
+        <p class="detail-notes__hint">As alterações ficam salvas apenas no seu dispositivo.</p>
       </section>
 
       <section class="detail-section" aria-labelledby="detail-attachments-title">

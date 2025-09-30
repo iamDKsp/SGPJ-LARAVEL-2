@@ -3,17 +3,22 @@
 
   const DETALHE_STORAGE_KEY = 'sgpj-detalhe-processo';
   const ANEXOS_STORAGE_KEY = 'sgpj-anexos';
+  const EDICOES_STORAGE_KEY = 'sgpj-detalhe-edicoes';
   const STATUS_CLASS_PREFIX = 'status-chip--';
   const STATUS_NORMALIZE = {
     pendente: 'pendente',
     perdido: 'perdido',
     finalizado: 'finalizado'
   };
+  const DESCRICAO_PADRAO =
+    'Utilize esta página para acompanhar a negociação em detalhes, adicionar observações internas e anexar documentos importantes relacionados ao processo.';
 
   let detalheShell;
   let statusChip;
+  let statusSelect;
   let titulo;
   let etapa;
+  let stageInput;
   let numero;
   let valor;
   let documento;
@@ -29,14 +34,17 @@
   let processoAtual = null;
   let anexosAtuais = [];
   let processoId = null;
+  let atualizarTimeout = null;
 
   document.addEventListener('DOMContentLoaded', inicializar);
 
   function inicializar() {
     detalheShell = document.getElementById('detail-shell');
     statusChip = document.getElementById('detail-status');
-    titulo = document.getElementById('detail-title');
+    statusSelect = document.getElementById('detail-status-select');
+    titulo = document.getElementById('detail-title-input');
     etapa = document.getElementById('detail-stage');
+    stageInput = document.getElementById('detail-stage-input');
     numero = document.getElementById('detail-number');
     valor = document.getElementById('detail-value');
     documento = document.getElementById('detail-document');
@@ -49,6 +57,8 @@
     attachmentList = document.getElementById('attachment-list');
     attachmentTemplate = document.getElementById('attachment-item-template');
     attachmentEmptyTemplate = document.getElementById('attachment-empty-template');
+
+    registrarEventosEdicao();
 
     processoId = obterIdentificadorProcesso();
     carregarProcesso();
@@ -183,40 +193,65 @@
   }
 
   function aplicarInformacoesProcesso() {
-    const nomeProcesso = processoAtual.nome_reu || 'Processo sem nome';
-    titulo.textContent = nomeProcesso;
-    document.title = nomeProcesso + ' · Detalhes do Processo';
+    const edicoes = carregarEdicoesLocais();
+    if (edicoes) {
+      processoAtual = Object.assign({}, processoAtual, edicoes);
+    }
+
+    const nomeProcessoAtualizado = processoAtual.nome_reu || 'Processo sem nome';
+    atualizarTituloPagina(nomeProcessoAtualizado);
+    if (titulo) {
+      titulo.value = nomeProcessoAtualizado;
+    }
 
     const statusNormalizado = normalizarStatus(processoAtual.status);
     atualizarStatus(statusNormalizado);
 
-    etapa.textContent = processoAtual.etapaNome || 'Etapa não definida';
-    numero.textContent = formatarNumeroProcesso(processoAtual.numero_processo);
-    valor.textContent = processoAtual.valorFormatado || processoAtual.valor_causa || '—';
-    documento.textContent = processoAtual.cpf_cnpj_reu || 'Não informado';
+    const etapaAtual = processoAtual.etapaNome || '';
+    atualizarEtapa(etapaAtual);
+    if (stageInput) {
+      stageInput.value = etapaAtual;
+    }
 
-    if (processoAtual.responsavelNome) {
-      responsavel.textContent = processoAtual.responsavelNome;
-    } else if (processoAtual.responsavelId) {
-      responsavel.textContent = processoAtual.responsavelId.toString().toUpperCase();
-    } else {
-      responsavel.textContent = 'Não atribuído';
+    if (numero) {
+      numero.value = formatarNumeroProcesso(processoAtual.numero_processo);
+    }
+
+    if (valor) {
+      const exibicaoValor = processoAtual.valorFormatado || processoAtual.valor_causa || '';
+      valor.value = exibicaoValor;
+    }
+
+    if (documento) {
+      documento.value = processoAtual.cpf_cnpj_reu || '';
+    }
+
+    if (responsavel) {
+      responsavel.value =
+        processoAtual.responsavelNome ||
+        processoAtual.responsavel ||
+        (processoAtual.responsavelId ? processoAtual.responsavelId.toString().toUpperCase() : '');
     }
 
     if (descricao) {
-      descricao.textContent =
-        'Este processo está classificado como ' +
-        obterRotuloStatus(statusNormalizado).toLowerCase() +
-        ' e localizado na etapa "' +
-        (processoAtual.etapaNome || 'não definida') +
-        '". Atualize as informações, registre observações e mantenha os documentos organizados para a equipe.';
+      if (Object.prototype.hasOwnProperty.call(processoAtual, 'descricaoPersonalizada')) {
+        descricao.value = processoAtual.descricaoPersonalizada || '';
+      } else if (processoAtual.descricao) {
+        descricao.value = processoAtual.descricao;
+      } else {
+        descricao.value = DESCRICAO_PADRAO;
+      }
     }
 
-    const agora = new Date();
-    atualizado.textContent = 'Atualizado em ' + formatarDataHumana(agora);
-    atualizado.dateTime = agora.toISOString();
+    const dataAtualizacao = processoAtual.atualizadoEm ? new Date(processoAtual.atualizadoEm) : new Date();
+    processoAtual.atualizadoEm = dataAtualizacao.toISOString();
+    if (atualizado) {
+      atualizado.textContent = 'Atualizado em ' + formatarDataHumana(dataAtualizacao);
+      atualizado.dateTime = processoAtual.atualizadoEm;
+    }
 
-    if (voltarBotao) {
+    if (voltarBotao && !voltarBotao.dataset.bound) {
+      voltarBotao.dataset.bound = 'true';
       voltarBotao.addEventListener('click', function () {
         if (window.history.length > 1) {
           window.history.back();
@@ -229,6 +264,239 @@
         }
       });
     }
+  }
+
+  function registrarEventosEdicao() {
+    if (titulo) {
+      titulo.addEventListener('input', function (evento) {
+        const texto = evento.target.value.trim();
+        atualizarTituloPagina(texto);
+        if (!processoAtual) {
+          return;
+        }
+        processoAtual.nome_reu = texto;
+        registrarAtualizacao();
+      });
+    }
+
+    if (statusSelect) {
+      statusSelect.addEventListener('change', function (evento) {
+        if (!processoAtual) {
+          return;
+        }
+        const novoStatus = normalizarStatus(evento.target.value);
+        processoAtual.status = novoStatus;
+        atualizarStatus(novoStatus);
+        registrarAtualizacao();
+      });
+    }
+
+    if (stageInput) {
+      stageInput.addEventListener('input', function (evento) {
+        const valorEtapa = evento.target.value.trim();
+        atualizarEtapa(valorEtapa);
+        if (!processoAtual) {
+          return;
+        }
+        processoAtual.etapaNome = valorEtapa;
+        registrarAtualizacao();
+      });
+    }
+
+    if (numero) {
+      numero.addEventListener('blur', function (evento) {
+        if (!processoAtual) {
+          return;
+        }
+        const texto = evento.target.value.trim();
+        processoAtual.numero_processo = texto;
+        evento.target.value = formatarNumeroProcesso(texto);
+        registrarAtualizacao();
+      });
+    }
+
+    if (valor) {
+      valor.addEventListener('blur', function (evento) {
+        if (!processoAtual) {
+          return;
+        }
+        const texto = evento.target.value.trim();
+        if (!texto) {
+          processoAtual.valor_causa = '';
+          processoAtual.valorFormatado = '';
+          evento.target.value = '';
+        } else {
+          const formatado = formatarValorMonetario(texto);
+          processoAtual.valor_causa = formatado;
+          processoAtual.valorFormatado = formatado;
+          evento.target.value = formatado;
+        }
+        registrarAtualizacao();
+      });
+    }
+
+    if (documento) {
+      documento.addEventListener('input', function (evento) {
+        if (!processoAtual) {
+          return;
+        }
+        processoAtual.cpf_cnpj_reu = evento.target.value.trim();
+        registrarAtualizacao();
+      });
+    }
+
+    if (responsavel) {
+      responsavel.addEventListener('input', function (evento) {
+        if (!processoAtual) {
+          return;
+        }
+        const texto = evento.target.value.trim();
+        processoAtual.responsavelNome = texto;
+        registrarAtualizacao();
+      });
+    }
+
+    if (descricao) {
+      descricao.addEventListener('input', function (evento) {
+        if (!processoAtual) {
+          return;
+        }
+        processoAtual.descricaoPersonalizada = evento.target.value;
+        registrarAtualizacao();
+      });
+    }
+  }
+
+  function atualizarTituloPagina(nome) {
+    const base = 'Detalhes do Processo';
+    if (nome) {
+      document.title = nome + ' · ' + base;
+    } else {
+      document.title = base;
+    }
+  }
+
+  function atualizarEtapa(texto) {
+    if (!etapa) {
+      return;
+    }
+    etapa.textContent = texto || 'Etapa não definida';
+  }
+
+  function registrarAtualizacao() {
+    if (!processoAtual) {
+      return;
+    }
+
+    if (atualizarTimeout) {
+      clearTimeout(atualizarTimeout);
+    }
+
+    atualizarTimeout = setTimeout(function () {
+      atualizarTimeout = null;
+      const agora = new Date();
+      processoAtual.atualizadoEm = agora.toISOString();
+      if (atualizado) {
+        atualizado.textContent = 'Atualizado em ' + formatarDataHumana(agora);
+        atualizado.dateTime = processoAtual.atualizadoEm;
+      }
+      salvarEdicoesLocais();
+    }, 250);
+  }
+
+  function salvarEdicoesLocais() {
+    const chave = obterChaveProcesso();
+    if (!chave || !processoAtual) {
+      return;
+    }
+
+    const todas = carregarTodasEdicoes();
+    todas[chave] = {
+      nome_reu: processoAtual.nome_reu || '',
+      numero_processo: processoAtual.numero_processo || '',
+      valor_causa: processoAtual.valor_causa || '',
+      valorFormatado: processoAtual.valorFormatado || processoAtual.valor_causa || '',
+      cpf_cnpj_reu: processoAtual.cpf_cnpj_reu || '',
+      responsavelNome: processoAtual.responsavelNome || '',
+      status: processoAtual.status,
+      etapaNome: processoAtual.etapaNome || '',
+      descricaoPersonalizada: processoAtual.descricaoPersonalizada,
+      atualizadoEm: processoAtual.atualizadoEm || ''
+    };
+
+    try {
+      localStorage.setItem(EDICOES_STORAGE_KEY, JSON.stringify(todas));
+    } catch (erro) {
+      console.warn('Não foi possível salvar as edições locais', erro);
+    }
+  }
+
+  function carregarEdicoesLocais() {
+    const chave = obterChaveProcesso();
+    if (!chave) {
+      return null;
+    }
+
+    const todas = carregarTodasEdicoes();
+    if (Object.prototype.hasOwnProperty.call(todas, chave)) {
+      return todas[chave];
+    }
+
+    return null;
+  }
+
+  function carregarTodasEdicoes() {
+    try {
+      const bruto = localStorage.getItem(EDICOES_STORAGE_KEY);
+      if (!bruto) {
+        return {};
+      }
+
+      const dados = JSON.parse(bruto);
+      if (dados && typeof dados === 'object') {
+        return dados;
+      }
+
+      return {};
+    } catch (erro) {
+      console.warn('Não foi possível carregar as edições locais', erro);
+      return {};
+    }
+  }
+
+  function obterChaveProcesso() {
+    if (processoAtual && processoAtual.id != null) {
+      return String(processoAtual.id);
+    }
+
+    if (processoAtual && processoAtual.numero_processo) {
+      return String(processoAtual.numero_processo);
+    }
+
+    if (processoId) {
+      return String(processoId);
+    }
+
+    return null;
+  }
+
+  function formatarValorMonetario(texto) {
+    if (!texto) {
+      return '';
+    }
+
+    const normalizado = texto
+      .toString()
+      .replace(/[^0-9,.-]+/g, '')
+      .replace(/\./g, '')
+      .replace(',', '.');
+
+    const numero = Number(normalizado);
+    if (Number.isNaN(numero)) {
+      return texto;
+    }
+
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numero);
   }
 
   function inicializarAnexos() {
@@ -384,6 +652,9 @@
       STATUS_CLASS_PREFIX + 'finalizado'
     );
     statusChip.classList.add(STATUS_CLASS_PREFIX + status);
+    if (statusSelect) {
+      statusSelect.value = status;
+    }
   }
 
   function obterRotuloStatus(status) {
@@ -420,7 +691,7 @@
 
   function formatarNumeroProcesso(numeroProcesso) {
     if (!numeroProcesso) {
-      return '—';
+      return '';
     }
 
     const texto = numeroProcesso.toString().replace(/[^0-9]/g, '');
