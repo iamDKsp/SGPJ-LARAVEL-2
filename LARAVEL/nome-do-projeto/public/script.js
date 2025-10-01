@@ -978,7 +978,10 @@
       return '';
     }
 
-    return template.replace('{id}', encodeURIComponent(identificador));
+    const encoded = encodeURIComponent(identificador);
+    return template
+      .replace('{id}', encoded)
+      .replace('__ID__', encoded);
   }
 
   function armazenarProcessoParaDetalhes(processo) {

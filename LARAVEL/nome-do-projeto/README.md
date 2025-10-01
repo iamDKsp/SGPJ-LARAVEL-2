@@ -27,9 +27,7 @@ Este diretório contém uma instalação padrão do Laravel 10 com a interface o
    ```bash
    php artisan serve
    ```
-2. Abra `http://127.0.0.1:8000` no navegador. A página inicial carrega exatamente o dashboard SGPJ da pasta `V7`, com o mesmo layout, estilos (`styles.css`) e scripts (`script.js` / `processos-data.js`).
-
-> Observação: todos os arquivos originais continuam preservados na pasta `V7` caso precise consultá-los diretamente.
+2. Abra `http://127.0.0.1:8000` no navegador. A página inicial carrega exatamente o dashboard SGPJ com o mesmo layout, estilos (`styles.css`) e scripts (`script.js` / `processos-data.js`) publicados em `public/`.
 
 ## Testes
 
