@@ -10,13 +10,16 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="{{ asset('styles.css') }}" />
+    @php
+      $assetBase = rtrim(request()->root(), '/');
+    @endphp
+    <link rel="stylesheet" href="{{ $assetBase }}/styles.css" />
   </head>
   <body
     class="detail-body"
-    data-processes-url="{{ asset('processos.json') }}"
+    data-processes-url="{{ $assetBase }}/processos.json"
     data-processo-id="{{ $processoId ?? '' }}"
-    data-dashboard-url="{{ route('sgpj.dashboard') }}"
+    data-dashboard-url="{{ route('sgpj.dashboard', absolute: false) }}"
   >
     <div class="detail-shell" id="detail-shell" hidden>
       <header class="detail-header">
@@ -44,7 +47,7 @@
           <p class="detail-stage" id="detail-stage">Etapa do funil</p>
         </div>
         <div class="detail-header__actions">
-          <a class="detail-back" href="{{ route('sgpj.dashboard') }}">⟵ Voltar para o CRM</a>
+          <a class="detail-back" href="{{ route('sgpj.dashboard', absolute: false) }}">⟵ Voltar para o CRM</a>
           <button type="button" class="detail-action" id="detail-open-board">
             Retomar negociação
           </button>
@@ -214,6 +217,6 @@
       <li class="attachment-list__empty">Nenhum arquivo anexado ainda.</li>
     </template>
 
-    <script src="{{ asset('detalhes.js') }}" defer></script>
+    <script src="{{ $assetBase }}/detalhes.js" defer></script>
   </body>
 </html>

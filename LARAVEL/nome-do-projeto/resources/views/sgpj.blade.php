@@ -10,11 +10,14 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="{{ asset('styles.css') }}" />
+    @php
+      $assetBase = rtrim(request()->root(), '/');
+    @endphp
+    <link rel="stylesheet" href="{{ $assetBase }}/styles.css" />
   </head>
   <body
-    data-detail-template="{{ route('sgpj.processo', ['processo' => '__ID__']) }}"
-    data-processes-url="{{ asset('processos.json') }}"
+    data-detail-template="{{ route('sgpj.processo', ['processo' => '__ID__'], absolute: false) }}"
+    data-processes-url="{{ $assetBase }}/processos.json"
   >
     <div class="login-screen" id="login-screen" aria-labelledby="login-title">
       <section class="login-card" role="dialog" aria-modal="true">
@@ -333,7 +336,7 @@
       </div>
     </aside>
 
-    <script src="{{ asset('processos-data.js') }}" defer></script>
-    <script src="{{ asset('script.js') }}" defer></script>
+    <script src="{{ $assetBase }}/processos-data.js" defer></script>
+    <script src="{{ $assetBase }}/script.js" defer></script>
   </body>
 </html>
