@@ -11,12 +11,12 @@
       rel="stylesheet"
     />
     @php
-      $assetBase = rtrim(request()->root(), '/');
+      $assetBase = rtrim(request()->getSchemeAndHttpHost() . request()->getBaseUrl(), '/');
     @endphp
     <link rel="stylesheet" href="{{ $assetBase }}/styles.css" />
   </head>
   <body
-    data-detail-template="{{ route('sgpj.processo', ['processo' => '__ID__'], absolute: false) }}"
+    data-detail-template="{{ $assetBase . route('sgpj.processo', ['processo' => '__ID__'], false) }}"
     data-processes-url="{{ $assetBase }}/processos.json"
   >
     <div class="login-screen" id="login-screen" aria-labelledby="login-title">

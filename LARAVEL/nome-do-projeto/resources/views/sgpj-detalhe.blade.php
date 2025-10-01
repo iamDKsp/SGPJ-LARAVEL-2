@@ -11,7 +11,7 @@
       rel="stylesheet"
     />
     @php
-      $assetBase = rtrim(request()->root(), '/');
+      $assetBase = rtrim(request()->getSchemeAndHttpHost() . request()->getBaseUrl(), '/');
     @endphp
     <link rel="stylesheet" href="{{ $assetBase }}/styles.css" />
   </head>
@@ -19,7 +19,7 @@
     class="detail-body"
     data-processes-url="{{ $assetBase }}/processos.json"
     data-processo-id="{{ $processoId ?? '' }}"
-    data-dashboard-url="{{ route('sgpj.dashboard', absolute: false) }}"
+    data-dashboard-url="{{ $assetBase . route('sgpj.dashboard', [], false) }}"
   >
     <div class="detail-shell" id="detail-shell" hidden>
       <header class="detail-header">
@@ -47,7 +47,7 @@
           <p class="detail-stage" id="detail-stage">Etapa do funil</p>
         </div>
         <div class="detail-header__actions">
-          <a class="detail-back" href="{{ route('sgpj.dashboard', absolute: false) }}">⟵ Voltar para o CRM</a>
+          <a class="detail-back" href="{{ $assetBase . route('sgpj.dashboard', [], false) }}">⟵ Voltar para o CRM</a>
           <button type="button" class="detail-action" id="detail-open-board">
             Retomar negociação
           </button>
