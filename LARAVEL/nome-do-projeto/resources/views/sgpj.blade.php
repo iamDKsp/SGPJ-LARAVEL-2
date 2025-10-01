@@ -10,9 +10,9 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="{{ asset('styles.css') }}" />
+    <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body data-detail-template="{{ url('processos') }}/{id}" data-processes-url="{{ asset('processos.json') }}">
+  <body data-detail-template="/processos/{id}" data-processes-url="/processos.json">
     <div class="login-screen" id="login-screen" aria-labelledby="login-title">
       <section class="login-card" role="dialog" aria-modal="true">
         <header class="login-card__header">
@@ -330,7 +330,7 @@
       </div>
     </aside>
 
-    <script src="{{ asset('processos-data.js') }}" defer></script>
-    <script src="{{ asset('script.js') }}" defer></script>
+    <script src="/processos-data.js" defer></script>
+    <script src="/script.js" defer></script>
   </body>
 </html>

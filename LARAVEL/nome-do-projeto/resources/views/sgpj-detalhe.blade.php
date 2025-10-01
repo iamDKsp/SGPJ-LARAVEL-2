@@ -10,13 +10,13 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="{{ asset('styles.css') }}" />
+    <link rel="stylesheet" href="/styles.css" />
   </head>
   <body
     class="detail-body"
-    data-processes-url="{{ asset('processos.json') }}"
+    data-processes-url="/processos.json"
     data-processo-id="{{ $processoId ?? '' }}"
-    data-dashboard-url="{{ url('/') }}"
+    data-dashboard-url="/"
   >
     <div class="detail-shell" id="detail-shell" hidden>
       <header class="detail-header">
@@ -44,7 +44,7 @@
           <p class="detail-stage" id="detail-stage">Etapa do funil</p>
         </div>
         <div class="detail-header__actions">
-          <a class="detail-back" href="{{ url('/') }}">⟵ Voltar para o CRM</a>
+          <a class="detail-back" href="/">⟵ Voltar para o CRM</a>
           <button type="button" class="detail-action" id="detail-open-board">
             Retomar negociação
           </button>
@@ -214,6 +214,6 @@
       <li class="attachment-list__empty">Nenhum arquivo anexado ainda.</li>
     </template>
 
-    <script src="{{ asset('detalhes.js') }}" defer></script>
+    <script src="/detalhes.js" defer></script>
   </body>
 </html>
