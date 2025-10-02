@@ -7,7 +7,7 @@ use Illuminate\Http\Middleware\TrustHosts as Middleware;
 class TrustHosts extends Middleware
 {
     /**
-     * Get the host patterns that should be trusted.
+     * Obter os padrões de host que devem ser confiáveis.
      *
      * @return array<int, string|null>
      */

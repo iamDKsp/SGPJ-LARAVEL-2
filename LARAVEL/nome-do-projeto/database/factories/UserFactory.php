@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
 class UserFactory extends Factory
 {
     /**
-     * Define the model's default state.
+     * Definir o estado padrão do modelo.
      */
     public function definition(): array
     {
@@ -26,7 +26,7 @@ class UserFactory extends Factory
     }
 
     /**
-     * Indicate that the model's email address should be unverified.
+     * Indicar que o e-mail do modelo deve permanecer não verificado.
      */
     public function unverified(): static
     {

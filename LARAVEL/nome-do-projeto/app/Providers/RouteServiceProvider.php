@@ -8,14 +8,14 @@ use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvi
 class RouteServiceProvider extends ServiceProvider
 {
     /**
-     * The path to the "home" route for your application.
+     * Caminho para a rota "home" da aplicação.
      *
-     * Typically, users are redirected here after authentication.
+     * Normalmente os usuários são redirecionados para cá após a autenticação.
      */
     public const HOME = '/home';
 
     /**
-     * Define your route model bindings, pattern filters, and other route configuration.
+     * Definir bindings de modelo, filtros de padrão e demais configurações de rotas.
      */
     public function boot(): void
     {

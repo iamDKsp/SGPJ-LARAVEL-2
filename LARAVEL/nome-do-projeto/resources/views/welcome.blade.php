@@ -14,25 +14,25 @@
     <body class="antialiased bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
         <div class="min-h-screen flex flex-col items-center justify-center px-6 py-8">
             <div class="text-center">
-                <h1 class="text-4xl font-semibold mb-4">Welcome to Laravel</h1>
-                <p class="text-lg mb-8">You have successfully installed the Laravel framework skeleton. Start building something amazing!</p>
+                <h1 class="text-4xl font-semibold mb-4">Bem-vindo ao Laravel</h1>
+                <p class="text-lg mb-8">Você instalou com sucesso o esqueleto do framework Laravel. Comece agora a construir algo incrível!</p>
             </div>
             <div class="grid gap-6 w-full max-w-4xl md:grid-cols-2">
                 <a class="p-6 rounded-xl bg-white/80 dark:bg-gray-800/70 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 transition hover:shadow-lg" href="https://laravel.com/docs" target="_blank">
-                    <h2 class="text-xl font-semibold">Documentation</h2>
-                    <p class="mt-3 text-sm text-gray-600 dark:text-gray-300">Dive into the official Laravel documentation for comprehensive guides and references.</p>
+                    <h2 class="text-xl font-semibold">Documentação</h2>
+                    <p class="mt-3 text-sm text-gray-600 dark:text-gray-300">Acesse a documentação oficial do Laravel para guias completos e referências detalhadas.</p>
                 </a>
                 <a class="p-6 rounded-xl bg-white/80 dark:bg-gray-800/70 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 transition hover:shadow-lg" href="https://laracasts.com" target="_blank">
                     <h2 class="text-xl font-semibold">Laracasts</h2>
-                    <p class="mt-3 text-sm text-gray-600 dark:text-gray-300">Learn Laravel through practical screencasts covering every aspect of the framework.</p>
+                    <p class="mt-3 text-sm text-gray-600 dark:text-gray-300">Aprenda Laravel com screencasts práticos que cobrem cada aspecto do framework.</p>
                 </a>
                 <a class="p-6 rounded-xl bg-white/80 dark:bg-gray-800/70 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 transition hover:shadow-lg" href="https://laravel-news.com" target="_blank">
                     <h2 class="text-xl font-semibold">Laravel News</h2>
-                    <p class="mt-3 text-sm text-gray-600 dark:text-gray-300">Stay up to date with the latest news, packages, and ecosystem updates.</p>
+                    <p class="mt-3 text-sm text-gray-600 dark:text-gray-300">Fique por dentro das últimas notícias, pacotes e novidades do ecossistema.</p>
                 </a>
                 <a class="p-6 rounded-xl bg-white/80 dark:bg-gray-800/70 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 transition hover:shadow-lg" href="https://github.com/laravel/laravel" target="_blank">
                     <h2 class="text-xl font-semibold">GitHub</h2>
-                    <p class="mt-3 text-sm text-gray-600 dark:text-gray-300">Contribute to the Laravel framework or explore the source code on GitHub.</p>
+                    <p class="mt-3 text-sm text-gray-600 dark:text-gray-300">Contribua com o framework Laravel ou explore o código-fonte no GitHub.</p>
                 </a>
             </div>
         </div>

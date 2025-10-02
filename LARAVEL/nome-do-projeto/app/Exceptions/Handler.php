@@ -8,21 +8,21 @@ use Throwable;
 class Handler extends ExceptionHandler
 {
     /**
-     * A list of exception types with their corresponding custom log levels.
+     * Lista de tipos de exceção com seus respectivos níveis personalizados de log.
      *
      * @var array<class-string<Throwable>, \Psr\Log\LogLevel::*>
      */
     protected $levels = [];
 
     /**
-     * A list of the exception types that are not reported.
+     * Lista de tipos de exceção que não são reportados.
      *
      * @var array<int, class-string<Throwable>>
      */
     protected $dontReport = [];
 
     /**
-     * A list of the inputs that are never flashed for validation exceptions.
+     * Lista de inputs que nunca são armazenados em sessão em exceções de validação.
      *
      * @var array<int, string>
      */
@@ -33,7 +33,7 @@ class Handler extends ExceptionHandler
     ];
 
     /**
-     * Register the exception handling callbacks for the application.
+     * Registrar os callbacks de tratamento de exceções da aplicação.
      */
     public function register(): void
     {

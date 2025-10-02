@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 class RedirectIfAuthenticated
 {
     /**
-     * Handle an incoming request.
+     * Processar uma requisição recebida.
      */
     public function handle(Request $request, Closure $next, string ...$guards): Response
     {

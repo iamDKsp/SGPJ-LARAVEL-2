@@ -16,7 +16,7 @@ class AuthServiceProvider extends ServiceProvider
     ];
 
     /**
-     * Register any authentication / authorization services.
+     * Registrar quaisquer serviços de autenticação/autorização.
      */
     public function boot(): void
     {
