@@ -11,7 +11,8 @@
       rel="stylesheet"
     />
     @php
-      $assetBase = rtrim(request()->getSchemeAndHttpHost() . request()->getBaseUrl(), '/');
+      $request = request();
+      $assetBase = rtrim($request->getBasePath(), '/');
     @endphp
     <link rel="stylesheet" href="{{ $assetBase }}/styles.css" />
   </head>
