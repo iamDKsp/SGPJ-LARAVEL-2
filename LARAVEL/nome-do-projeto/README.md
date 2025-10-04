@@ -20,11 +20,12 @@ Este diretório contém uma instalação padrão do Laravel 10 com a interface o
    php artisan key:generate
    ```
 3. Ajuste as credenciais de banco no `.env` (host, porta, banco, usuário e senha) para apontar para o MySQL/MariaDB onde o painel será executado.
-4. Importe o arquivo `processos(3).sql` (presente na raiz do repositório) para popular a tabela `processos` com os registros oficiais:
+4. Importe o arquivo `processos(3).sql` (presente na raiz do repositório) para popular a tabela `processos` com os registros oficiais. Caso esteja usando o terminal integrado do VS Code, é possível executar tudo apenas com o Artisan:
    ```bash
-   mysql -u seu_usuario -p seu_banco < processos(3).sql
+   php artisan processos:importar-sql storage/app/processos(3).sql --limpar
    ```
-   > Certifique-se de que o banco configurado no `.env` seja o mesmo em que o script foi executado.
+   > Copie o arquivo SQL para `storage/app` ou informe o caminho completo em relação à raiz do projeto antes de rodar o comando.
+   > O parâmetro `--limpar` apaga os registros atuais da tabela antes de importar o conteúdo do dump.
 
 ## Servindo a interface SGPJ
 
