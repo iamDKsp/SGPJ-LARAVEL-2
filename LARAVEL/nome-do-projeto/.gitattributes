@@ -1,0 +1,10 @@
+* text=auto
+
+php linguist-language=PHP
+*.blade.php linguist-language=Blade
+
+/public/storage export-ignore
+/storage/*.key filter=lfs diff=lfs merge=lfs -text
+.env export-ignore
+/vendor export-ignore
+/node_modules export-ignore
