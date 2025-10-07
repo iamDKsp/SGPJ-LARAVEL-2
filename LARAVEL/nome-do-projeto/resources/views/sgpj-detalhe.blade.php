@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Detalhes do Processo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    @php
+      $request = request();
+      $assetBase = rtrim($request->getBasePath(), '/');
+    @endphp
+    <link rel="stylesheet" href="{{ $assetBase }}/styles.css" />
+  </head>
+  <body
+    class="detail-body"
+    data-processes-url="{{ $assetBase . route('api.processos.index', [], false) }}"
+    data-processo-id="{{ $processoId ?? '' }}"
+    data-dashboard-url="{{ $assetBase . route('sgpj.dashboard', [], false) }}"
+  >
+    <div class="detail-shell" id="detail-shell" hidden>
+      <header class="detail-header">
+        <div class="detail-header__primary">
+          <div class="detail-status-line">
+            <span class="status-chip" id="detail-status">Status</span>
+            <label class="detail-status-control" for="detail-status-select">
+              <span class="detail-status-control__label">Atualizar status</span>
+              <select class="detail-status-control__select" id="detail-status-select">
+                <option value="pendente">Pendente</option>
+                <option value="perdido">Perdido</option>
+                <option value="finalizado">Finalizado</option>
+              </select>
+            </label>
+          </div>
+          <h1 class="detail-title">
+            <input
+              type="text"
+              id="detail-title-input"
+              class="detail-title-input"
+              placeholder="Nome do processo"
+              autocomplete="off"
+            />
+          </h1>
+          <p class="detail-stage" id="detail-stage">Etapa do funil</p>
+        </div>
+        <div class="detail-header__actions">
+          <a class="detail-back" href="{{ $assetBase . route('sgpj.dashboard', [], false) }}">⟵ Voltar para o CRM</a>
+          <button type="button" class="detail-action" id="detail-open-board">
+            Retomar negociação
+          </button>
+        </div>
+      </header>
+
+      <section class="detail-summary" aria-label="Resumo do processo">
+        <article class="detail-summary__card">
+          <span class="detail-summary__label">Número do processo</span>
+          <p class="detail-summary__value" id="detail-number-display">—</p>
+        </article>
+        <article class="detail-summary__card detail-summary__card--highlight">
+          <span class="detail-summary__label">Valor da causa</span>
+          <p class="detail-summary__value" id="detail-value-display">—</p>
+        </article>
+        <article class="detail-summary__card">
+          <span class="detail-summary__label">CPF/CNPJ</span>
+          <p class="detail-summary__value" id="detail-document-display">—</p>
+        </article>
+        <article class="detail-summary__card">
+          <span class="detail-summary__label">Responsável</span>
+          <p class="detail-summary__value" id="detail-responsible-display">—</p>
+        </article>
+      </section>
+
+      <main class="detail-layout">
+        <section class="detail-column detail-column--primary" aria-labelledby="detail-infos-title detail-notes-title">
+          <section class="detail-grid" aria-labelledby="detail-infos-title">
+            <div class="detail-grid__head">
+              <h2 class="detail-section-title" id="detail-infos-title">Informações do processo</h2>
+              <p class="detail-grid__subtitle">Personalize os dados conforme a negociação evolui.</p>
+            </div>
+            <form class="detail-grid__form" id="detail-form" autocomplete="off" novalidate>
+              <label class="detail-field" for="detail-stage-input">
+                <span class="detail-field__label">Etapa do funil</span>
+                <input
+                  type="text"
+                  id="detail-stage-input"
+                  class="detail-field__input"
+                  placeholder="Ex.: Em progresso"
+                  autocomplete="off"
+                />
+              </label>
+              <label class="detail-field" for="detail-number">
+                <span class="detail-field__label">Número do processo</span>
+                <input
+                  type="text"
+                  id="detail-number"
+                  class="detail-field__input"
+                  inputmode="numeric"
+                  placeholder="0000000-00.0000.0.00.0000"
+                  autocomplete="off"
+                />
+              </label>
+              <label class="detail-field" for="detail-value">
+                <span class="detail-field__label">Valor da causa</span>
+                <input
+                  type="text"
+                  id="detail-value"
+                  class="detail-field__input"
+                  inputmode="decimal"
+                  placeholder="R$ 0,00"
+                  autocomplete="off"
+                />
+              </label>
+              <label class="detail-field" for="detail-document">
+                <span class="detail-field__label">CPF/CNPJ</span>
+                <input
+                  type="text"
+                  id="detail-document"
+                  class="detail-field__input"
+                  placeholder="Insira o documento"
+                  autocomplete="off"
+                />
+              </label>
+              <label class="detail-field" for="detail-responsible">
+                <span class="detail-field__label">Responsável</span>
+                <input
+                  type="text"
+                  id="detail-responsible"
+                  class="detail-field__input"
+                  placeholder="Selecione o responsável"
+                  autocomplete="off"
+                />
+              </label>
+            </form>
+          </section>
+
+          <section class="detail-section detail-notes" aria-labelledby="detail-notes-title">
+            <div class="detail-section__header">
+              <div>
+                <h2 class="detail-section-title" id="detail-notes-title">Resumo e observações</h2>
+                <p class="detail-section__subtitle">
+                  Compartilhe os próximos passos, bloqueios e oportunidades do processo.
+                </p>
+              </div>
+              <time class="detail-updated" id="detail-updated" datetime="">
+                Atualizado agora
+              </time>
+            </div>
+            <textarea
+              class="detail-notes__editor"
+              id="detail-description"
+              rows="5"
+              placeholder="Registre informações importantes, atualizações e próximos passos da negociação."
+            ></textarea>
+            <p class="detail-notes__hint">As alterações ficam salvas apenas no seu dispositivo.</p>
+          </section>
+        </section>
+
+        <aside class="detail-column detail-column--secondary" aria-labelledby="detail-attachments-title">
+          <section class="detail-section detail-attachments" aria-labelledby="detail-attachments-title">
+            <div class="detail-section__header">
+              <div>
+                <h2 class="detail-section-title" id="detail-attachments-title">Anexos</h2>
+                <p class="detail-section__subtitle">
+                  Faça upload de contratos, comprovantes ou qualquer documento de apoio.
+                </p>
+              </div>
+            </div>
+            <form class="detail-upload" id="attachment-form">
+              <label class="detail-upload__field" for="attachment-input">
+                <span class="detail-upload__label">Selecionar arquivo</span>
+                <input
+                  type="file"
+                  id="attachment-input"
+                  name="attachment"
+                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.zip,.rar,.7z"
+                />
+              </label>
+              <p class="detail-upload__hint">
+                Os arquivos ficam salvos localmente no seu navegador.
+              </p>
+            </form>
+            <div class="detail-attachments__list" aria-live="polite">
+              <h3 class="detail-attachments__title">Arquivos fixados</h3>
+              <ul class="attachment-list" id="attachment-list">
+                <li class="attachment-list__empty">Nenhum arquivo anexado ainda.</li>
+              </ul>
+            </div>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <div class="detail-loading" id="detail-loading">
+      <span class="detail-loading__spinner" aria-hidden="true"></span>
+      <p class="detail-loading__label">Carregando informações do processo…</p>
+    </div>
+
+    <template id="attachment-item-template">
+      <li class="attachment-item">
+        <span class="attachment-item__pin" aria-hidden="true">📌</span>
+        <div class="attachment-item__icon" aria-hidden="true">📄</div>
+        <div class="attachment-item__meta">
+          <strong class="attachment-item__name"></strong>
+          <span class="attachment-item__info"></span>
+        </div>
+        <div class="attachment-item__actions">
+          <a class="attachment-item__download" href="#" download>Baixar</a>
+          <button type="button" class="attachment-item__remove">Remover</button>
+        </div>
+      </li>
+    </template>
+
+    <template id="attachment-empty-template">
+      <li class="attachment-list__empty">Nenhum arquivo anexado ainda.</li>
+    </template>
+
+    <script src="{{ $assetBase }}/detalhes.js" defer></script>
+  </body>
+</html>
